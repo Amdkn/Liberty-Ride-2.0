@@ -1021,7 +1021,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
                   </span>
                   <h4 className="text-xs font-bold text-white truncate">{selectedAgent.name}</h4>
                 </div>
-                <p className="text-[11px] text-slate-400 truncate">{selectedAgent.title}</p>
+                <p className="text-[11px] text-slate-400 truncate">{selectedAgent.roleTitle}</p>
               </div>
             </div>
             <button
