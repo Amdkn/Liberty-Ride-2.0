@@ -1,5 +1,19 @@
 [
   {
+    "id": "RCPT-OPE-400",
+    "taskId": "TASK-OPE-400",
+    "agentId": "b3-ops-dispatch",
+    "verifiedBy": "b2-01-operations",
+    "timestamp": "2026-11-15T17:35:30.811Z",
+    "summary": "SOP exécutée par b3-ops-dispatch et auditée conforme par b2-01-operations pour \"Optimiser la rotation matinale des 3 SUV Erlanger -> CVG Terminal Bagages\".",
+    "metrics": {
+      "slaVerified": "PASS",
+      "driverNetHourlyTargetUsd": 48.6,
+      "rejectionCountAtClose": 0
+    },
+    "hash": "sha256:a58b2f3158d254fa"
+  },
+  {
     "id": "RCPT-OPS-101",
     "taskId": "TASK-OPS-101",
     "agentId": "b3-ops-dispatch",
