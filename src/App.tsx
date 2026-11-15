@@ -7,9 +7,6 @@ import {
   Lock,
   Unlock,
   BookOpen,
-  HardDrive,
-  CheckCircle2,
-  AlertTriangle,
 } from 'lucide-react';
 import {
   AgentNode,
@@ -23,7 +20,6 @@ import {
   INITIAL_HUMAN_GATES,
   signHumanGateByA0,
 } from './world-model/humanGates';
-import { countBlockedTasks } from './world-model/capabilityEngine';
 import { AdminVillageView } from './experiences/admin-agent-village/AdminVillageView';
 import { DriverHouseTwinView } from './experiences/driver-house-twin/DriverHouseTwinView';
 import { CustomerWorldView } from './experiences/customer-world/CustomerWorldView';
@@ -49,8 +45,6 @@ export const App: React.FC = () => {
     return unsubscribe;
   }, []);
 
-  const totalReceipts = agents.reduce((acc, ag) => acc + ag.receipts.length, 0);
-  const blockedTasks = countBlockedTasks(agents);
   const approvedGatesCount = Object.values(humanGates).filter(
     (g) => g.status === 'APPROVED_BY_A0'
   ).length;
@@ -62,145 +56,78 @@ export const App: React.FC = () => {
         current.status === 'APPROVED_BY_A0' ? 'LOCKED' : 'APPROVED_BY_A0';
       return {
         ...prev,
-        [gateId]: signHumanGateByA0(current, nextStatus === 'APPROVED_BY_A0' ? 'APPROVED_BY_A0' : 'REJECTED_BY_A0'),
+        [gateId]: signHumanGateByA0(
+          current,
+          nextStatus === 'APPROVED_BY_A0' ? 'APPROVED_BY_A0' : 'REJECTED_BY_A0'
+        ),
       };
     });
   };
 
   return (
-    <div className="min-h-screen bg-[#060d13] text-slate-100 flex flex-col">
-      {/* Unified Top Navigation Bar & Shareholder A0 HUD */}
-      <header className="sticky top-0 z-40 bg-[#071119]/95 backdrop-blur-md border-b border-emerald-500/25 px-4 py-2.5">
-        <div className="max-w-[1680px] mx-auto flex flex-wrap items-center justify-between gap-3">
-          {/* Brand Title */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center font-mono font-extrabold text-emerald-300 text-sm shadow-inner">
-              A0
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm md:text-base font-extrabold tracking-tight text-white">
-                  LIBERTY RIDE 2.0 <span className="text-emerald-400 font-mono text-xs">(LD01)</span>
-                </h1>
-                <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  A’Space OS · Monorepo Agent-First
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono">
-                Gouvernance E-Myth : A0 Amadeus → B1 Elena CEO → 8 Directeurs B2 → 8 Workers B3 (Gilet Jaune)
-              </p>
-            </div>
-          </div>
+    <div className="w-screen h-[100dvh] overflow-hidden bg-[#040a0f] text-slate-100 relative">
+      {/* Primary Fullscreen Experience: Map-First Agent Village */}
+      {activeExperience === 'ADMIN_VILLAGE' && (
+        <AdminVillageView
+          agents={agents}
+          isDiskConnected={isDiskConnected}
+          activeExperience={activeExperience}
+          onSelectExperience={setActiveExperience}
+          approvedGatesCount={approvedGatesCount}
+          onOpenHumanGates={() => setGatesModalOpen(true)}
+          onOpenMemory={() => setMemoryModalOpen(true)}
+        />
+      )}
 
-          {/* Center: 3 Unified Experiences Switcher */}
+      {/* Secondary Experiences (Driver House 3D Twin & Customer World) with compact floating switcher */}
+      {activeExperience !== 'ADMIN_VILLAGE' && (
+        <div className="w-full h-full overflow-y-auto pt-16 px-4 pb-8">
           <nav
             aria-label="Expériences Liberty Ride 2.0"
-            className="flex items-center gap-1.5 bg-[#040a0f] p-1 rounded-xl border border-slate-800"
+            className="fixed top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full bg-[#071119]/85 backdrop-blur-xl border border-white/10 shadow-2xl"
           >
             <button
               id="nav-admin-village-btn"
               onClick={() => setActiveExperience('ADMIN_VILLAGE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
-                activeExperience === 'ADMIN_VILLAGE'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
+              className="px-3 py-1 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-1.5 transition"
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>1. Admin Agent Village (2D)</span>
+              <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Village</span>
             </button>
 
             <button
               id="nav-driver-house-btn"
               onClick={() => setActiveExperience('DRIVER_HOUSE_3D')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition ${
                 activeExperience === 'DRIVER_HOUSE_3D'
-                  ? 'bg-cyan-400 text-slate-950 shadow-md'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-cyan-400 text-slate-950 font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              <span>2. Driver House 3D Twin</span>
+              <span>Driver House 3D</span>
             </button>
 
             <button
               id="nav-customer-world-btn"
               onClick={() => setActiveExperience('CUSTOMER_WORLD')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 transition ${
                 activeExperience === 'CUSTOMER_WORLD'
-                  ? 'bg-amber-400 text-slate-950 shadow-md'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-amber-400 text-slate-950 font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
             >
               <CarFront className="w-3.5 h-3.5" />
-              <span>3. Customer World (CVG)</span>
+              <span>Customer World (CVG)</span>
             </button>
           </nav>
 
-          {/* Right: Shareholder A0 HUD Badges */}
-          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-            <button
-              id="open-human-gates-btn"
-              onClick={() => setGatesModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 flex items-center gap-1.5"
-              title="Gérer les 5 Verrous Souverains A0 Amadeus"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Human Gates ({approvedGatesCount}/5)</span>
-            </button>
-
-            <button
-              id="open-memory-md-btn"
-              onClick={() => setMemoryModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 flex items-center gap-1.5"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>MEMORY.md ({totalReceipts} Reçus)</span>
-            </button>
-
-            <div
-              className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 ${
-                blockedTasks.length > 0
-                  ? 'bg-red-950/60 border-red-500/60 text-red-300'
-                  : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-              }`}
-            >
-              {blockedTasks.length > 0 ? (
-                <>
-                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                  <span>{blockedTasks.length} BLOCKED_2X</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>0 Blocage</span>
-                </>
-              )}
-            </div>
-
-            <div
-              className="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 flex items-center gap-1.5"
-              title="Statut du plugin Vite agent-filesystem-api (/api/agents)"
-            >
-              <HardDrive
-                className={`w-3.5 h-3.5 ${
-                  isDiskConnected ? 'text-emerald-400' : 'text-amber-400'
-                }`}
-              />
-              <span>{isDiskConnected ? './agents/ Live' : 'Local Sync'}</span>
-            </div>
+          <div className="max-w-[1600px] mx-auto">
+            {activeExperience === 'DRIVER_HOUSE_3D' && <DriverHouseTwinView />}
+            {activeExperience === 'CUSTOMER_WORLD' && <CustomerWorldView />}
           </div>
         </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-[1680px] w-full mx-auto px-4 py-4">
-        {activeExperience === 'ADMIN_VILLAGE' && (
-          <AdminVillageView agents={agents} isDiskConnected={isDiskConnected} />
-        )}
-        {activeExperience === 'DRIVER_HOUSE_3D' && <DriverHouseTwinView />}
-        {activeExperience === 'CUSTOMER_WORLD' && <CustomerWorldView />}
-      </main>
+      )}
 
       {/* Sovereign A0 Human Gates Modal */}
       {gatesModalOpen && (

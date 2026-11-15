@@ -5,14 +5,28 @@ import {
   Landmark,
   Zap,
   FolderUp,
-  Terminal,
   DoorOpen,
   ShieldAlert,
   Sparkles,
+  Users,
+  CheckSquare,
+  BookOpen,
+  Building2,
+  CarFront,
+  Compass,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  ShieldCheck,
+  HardDrive,
+  X,
+  ChevronRight,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   AgentNode,
   DomainId,
+  ExperienceId,
   SceneLocationId,
   TaskRecord,
 } from '../../world-model/types';
@@ -44,11 +58,42 @@ import { AgentInspectorDrawer } from './AgentInspectorDrawer';
 interface AdminVillageViewProps {
   agents: AgentNode[];
   isDiskConnected: boolean;
+  activeExperience: ExperienceId;
+  onSelectExperience: (exp: ExperienceId) => void;
+  approvedGatesCount: number;
+  onOpenHumanGates: () => void;
+  onOpenMemory: () => void;
+}
+
+/**
+ * Maps client mouse coordinates to the 1280x720 virtual canvas space,
+ * accurately accounting for object-contain letterboxing and zoom/pan.
+ */
+function clientToCanvasCoords(
+  canvas: HTMLCanvasElement,
+  clientX: number,
+  clientY: number
+): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  const scale = Math.min(rect.width / 1280, rect.height / 720);
+  const renderedW = 1280 * scale;
+  const renderedH = 720 * scale;
+  const offsetX = rect.left + (rect.width - renderedW) / 2;
+  const offsetY = rect.top + (rect.height - renderedH) / 2;
+  return {
+    x: (clientX - offsetX) / scale,
+    y: (clientY - offsetY) / scale,
+  };
 }
 
 export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
   agents,
   isDiskConnected,
+  activeExperience,
+  onSelectExperience,
+  approvedGatesCount,
+  onOpenHumanGates,
+  onOpenMemory,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -62,9 +107,16 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
   const [hoveredRoomId, setHoveredRoomId] = useState<SceneLocationId | null>(null);
   const [showWalkmap, setShowWalkmap] = useState<boolean>(false);
   const [isHulkMode, setIsHulkMode] = useState<boolean>(false);
-  const [inspectorOpen, setInspectorOpen] = useState<boolean>(true);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [locationMenuOpen, setLocationMenuOpen] = useState<boolean>(false);
+
+  // Contextual overlays (all closed by default so 95% of viewport is the Village)
+  const [inspectorOpen, setInspectorOpen] = useState<boolean>(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('a0-amadeus');
+  const [agentQuickCardOpen, setAgentQuickCardOpen] = useState<boolean>(false);
   const [callB1ModalOpen, setCallB1ModalOpen] = useState<boolean>(false);
+  const [escalationDrawerOpen, setEscalationDrawerOpen] = useState<boolean>(false);
+
   const [missionTitle, setMissionTitle] = useState<string>(
     'Optimiser la rotation matinale des 3 SUV Erlanger -> CVG Terminal Bagages'
   );
@@ -85,16 +137,15 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       const prevScene = activeScene;
       setActiveScene(target);
       setHoveredRoomId(null);
+      setLocationMenuOpen(false);
       agentFileBridge.updateAgentsInMemory((list) =>
         fsmRef.current.transitionToScene(list, target, prevScene)
       );
       if (target === 'CAMPUS') {
-        triggerToast('🌍 Retour sur le Campus Solarpunk Overworld (Échelle 1/22).');
+        triggerToast('🌍 Campus Solarpunk Overworld (Échelle 1/22)');
       } else {
         const bInfo = CAMPUS_BUILDING_DOORWAYS.find((b) => b.roomId === target);
-        triggerToast(
-          `🏛 Entrée dans ${bInfo?.label || target} (Échelle 1/12 — Directeur B2 au bureau & Worker B3 actif).`
-        );
+        triggerToast(`🏛 ${bInfo?.label || target} (Échelle 1/12)`);
       }
     },
     [activeScene, triggerToast]
@@ -120,8 +171,8 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       );
       triggerToast(
         next
-          ? '⚡ A0 Amadeus transformé en HULK (UNBLOCK_HULK) : vitesse x2 & pouvoir de déblocage souverain actif !'
-          : 'A0 Amadeus revenu en posture NORMAL_HOODY.'
+          ? '⚡ Mode Hulk (UNBLOCK_HULK) activé : vitesse x2'
+          : 'A0 Amadeus revenu en posture NORMAL_HOODY'
       );
       return next;
     });
@@ -175,7 +226,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       >;
       const anchors = DOMAIN_ROOM_ANCHORS[roomKey] || DOMAIN_ROOM_ANCHORS.ROOM_01;
 
-      // Step 1: B2 sits at desk, B3 walks to B2 desk to deliver receipt
       agentFileBridge.updateAgentsInMemory((list) =>
         list.map((ag) => {
           if (ag.id === b2AgentId) {
@@ -202,7 +252,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         })
       );
 
-      // Step 2: B3 submits receipt at B2 desk, then returns to workbench
       setTimeout(async () => {
         const completedTask: TaskRecord = {
           ...task,
@@ -238,39 +287,36 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
         await agentFileBridge.upsertTaskAndReceipt(b2AgentId, completedTask, receipt, noteLine);
         await agentFileBridge.upsertTaskAndReceipt(b3Id, completedTask, receipt, noteLine);
-        triggerToast(`✅ ${b3Id} a remis le reçu ${receipt.id} à ${b2AgentId} (NOTES.md mis à jour).`);
+        triggerToast(`✅ ${b3Id} a remis le reçu ${receipt.id} à ${b2AgentId}.`);
       }, 1600);
     },
     [agents, triggerToast]
   );
 
-  // Simulate 2 consecutive rejections by B2 Director -> triggers BLOCKED_2X for Hulk mode
+  // Simulate 2 consecutive rejections by B2 Director -> triggers BLOCKED_2X
   const handleSimulateReject2x = useCallback(
     async (b2AgentId: string, task: TaskRecord) => {
       const r1 = registerB2Rejection(task);
       const r2 = registerB2Rejection(r1);
       const noteLine = `[ALERTE BLOCKED_2X] Tâche \`${task.id}\` rejetée 2 fois au contrôle TDD par \`${b2AgentId}\`. Escalade Mode Hulk A0 requise.`;
       await agentFileBridge.upsertTaskAndReceipt(b2AgentId, r2, undefined, noteLine);
-      triggerToast(
-        `🚨 Tâche ${task.id} en statut BLOCKED_2X (2 rejets) ! Appuyez sur H (Mode Hulk) pour la débloquer.`
-      );
+      triggerToast(`🚨 Tâche ${task.id} en BLOCKED_2X — Ouvrez la notification en bas.`);
     },
     [triggerToast]
   );
 
-  // Call Town Hall (Key C or Button): Convene A0, B1, and 8 B2 Directors in Room 00 Seated
+  // Call Town Hall (Key C or CALL MEETING): Convene A0, B1, and 8 B2 Directors in Room 00 Seated
   const handleCallTownHall = useCallback(() => {
     setActiveScene('ROOM_00');
     setHoveredRoomId(null);
+    setLocationMenuOpen(false);
     agentFileBridge.updateAgentsInMemory((list) =>
       fsmRef.current.assembleTownHallCouncil(list, Date.now())
     );
-    triggerToast(
-      '🏛 Conseil 12WY convoqué au City Hall (Room 00) ! Les 8 Directeurs B2 s’assoient autour de la maquette du village.'
-    );
+    triggerToast('🏛 Conseil 12WY convoqué au City Hall (Room 00)');
   }, [triggerToast]);
 
-  // Dispatch Mission via B1 CEO Elena Rostova (Double-N or Button)
+  // Dispatch Mission via B1 CEO Elena Rostova (Double-N or To-do)
   const handleDispatchFromB1 = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -280,7 +326,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       setCallB1ModalOpen(false);
       setSelectedAgentId(routing.b2AgentId);
 
-      // 1. Switch B1 Elena to PHONE_DISPATCH sprite + beam to B2
       fsmRef.current.triggerDispatchBeam(
         'b1-ceo-chief-of-staff',
         routing.b2AgentId,
@@ -317,11 +362,8 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         `Mission assignée par B1 CEO Elena Rostova : **${task.title}** (Déléguée à \`${routing.b3WorkerId}\`).`
       );
 
-      triggerToast(
-        `📲 Elena B1 (PHONE_DISPATCH) a envoyé ${task.id} à ${routing.b2AgentId} -> Exécution SOP B3 en cours...`
-      );
+      triggerToast(`📲 Elena B1 (PHONE_DISPATCH) → ${routing.b2AgentId} (${task.id})`);
 
-      // Return B1 to WALK_FOLLOW after phone call and auto-run B3 SOP
       setTimeout(() => {
         agentFileBridge.updateAgentsInMemory((list) =>
           list.map((ag) =>
@@ -334,7 +376,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
     [missionTitle, missionDomain, activeScene, handleExecuteTaskSop, triggerToast]
   );
 
-  // Keyboard Listeners (ZQSD/WASD/Arrows, M, Double-N, C, H, T)
+  // Keyboard Listeners (ZQSD/WASD/Arrows, M, Double-N, C, H, T, ESC)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -354,6 +396,12 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       } else if (e.code === 'KeyT') {
         e.preventDefault();
         setInspectorOpen((prev) => !prev);
+      } else if (e.code === 'Escape') {
+        setInspectorOpen(false);
+        setAgentQuickCardOpen(false);
+        setLocationMenuOpen(false);
+        setEscalationDrawerOpen(false);
+        setCallB1ModalOpen(false);
       } else if (e.code === 'KeyN') {
         const now = Date.now();
         if (now - lastKeyNTimeRef.current < 420) {
@@ -384,7 +432,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       frameCountRef.current += 1;
       const nowMs = Date.now();
 
-      // Advance FSM
       const snapshot = agentFileBridge.getAgentsSnapshot();
       const { nextAgents, nextScene, movingMap } = fsmRef.current.stepFrame(
         snapshot,
@@ -399,14 +446,13 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       }
       agentFileBridge.updateAgentsInMemory(() => nextAgents);
 
-      // Draw Canvas
       const canvas = canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.clearRect(0, 0, 1280, 720);
 
-          // 1. Scene Background (Living WebP Map or HD Interior Room 00..08)
+          // 1. Living WebP Map or HD Interior Room 00..08
           renderSceneBackground(ctx, nextScene, frameCountRef.current, hoveredRoomId);
 
           // 2. Walkmap Debug Overlay (Key M)
@@ -414,12 +460,10 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             renderWalkmapDebugOverlay(ctx, nextScene);
           }
 
-          // 3. Filter visible agents in current scene
+          // 3. Visible agents in current scene
           const visibleAgents = nextAgents
             .filter((ag) => {
-              if (nextScene === 'CAMPUS') {
-                return ag.tier !== 'B3';
-              }
+              if (nextScene === 'CAMPUS') return ag.tier !== 'B3';
               if (nextScene === 'ROOM_00') {
                 return (
                   ag.currentLocation === 'ROOM_00' ||
@@ -436,7 +480,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             })
             .sort((a, b) => a.y - b.y);
 
-          // 4. Draw Active Dispatch Beam from B1 to B2
+          // 4. Active Dispatch Beam from B1 to B2
           const beam = fsmRef.current.getActiveBeam();
           if (beam) {
             const fromAg = visibleAgents.find((a) => a.id === beam.fromAgentId);
@@ -455,40 +499,34 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             }
           }
 
-          // 5. Draw Agents with Canonical Scale (Overworld = 42px, Rooms = 68px)
+          // 5. Agents (Overworld = 42px, Rooms = 68px)
           const targetCharHeight = nextScene === 'CAMPUS' ? 42 : 68;
 
           for (const ag of visibleAgents) {
-            const isSelected = ag.id === selectedAgentId;
+            const isSelected = ag.id === selectedAgentId && (agentQuickCardOpen || inspectorOpen);
             const hasBlockedTask = ag.tasks.some((t) => t.status === 'BLOCKED_2X');
 
-            // Choose active sprite key based on posture
             let spriteKey = ag.standingSpriteKey;
             if (ag.id === 'a0-amadeus') {
-              if (ag.posture === 'UNBLOCK_HULK') {
-                spriteKey = 'a0_hulk';
-              } else if (ag.posture === 'SEATED') {
-                spriteKey = 'a0_seated';
-              } else {
-                spriteKey = 'a0_hoody';
-              }
+              if (ag.posture === 'UNBLOCK_HULK') spriteKey = 'a0_hulk';
+              else if (ag.posture === 'SEATED') spriteKey = 'a0_seated';
+              else spriteKey = 'a0_hoody';
             } else if (ag.id === 'b1-ceo-chief-of-staff' && ag.posture === 'PHONE_DISPATCH') {
-              spriteKey = ag.altSpriteKey; // b1_phone
+              spriteKey = ag.altSpriteKey;
             } else if (ag.tier === 'B2' && ag.posture === 'SEATED' && nextScene !== 'CAMPUS') {
-              spriteKey = ag.altSpriteKey; // b2_*_seated
+              spriteKey = ag.altSpriteKey;
             }
 
-            // Selection or Blocked Halo
             ctx.save();
             if (isSelected || hasBlockedTask) {
               ctx.strokeStyle = hasBlockedTask ? '#ef4444' : ag.roofColor;
-              ctx.lineWidth = 2.2;
+              ctx.lineWidth = 2.4;
               ctx.beginPath();
               ctx.ellipse(
                 ag.x,
                 ag.y - 2,
-                nextScene === 'CAMPUS' ? 15 : 22,
-                nextScene === 'CAMPUS' ? 6 : 9,
+                nextScene === 'CAMPUS' ? 16 : 23,
+                nextScene === 'CAMPUS' ? 6.5 : 9.5,
                 0,
                 0,
                 Math.PI * 2
@@ -507,7 +545,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
               targetCharHeight
             );
 
-            // Agent Nameplate & Tier Badge
+            // Contextual Nameplate
             const labelY = ag.y + (nextScene === 'CAMPUS' ? 11 : 14);
             ctx.font =
               nextScene === 'CAMPUS'
@@ -528,7 +566,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             ctx.textAlign = 'center';
             ctx.fillText(badgeText, ag.x, labelY);
 
-            // Speech Bubble if active
             if (ag.speechBubble) {
               const bubbleY = ag.y - targetCharHeight - 10;
               ctx.font = '600 10px "Inter", sans-serif';
@@ -554,9 +591,9 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
     animId = requestAnimationFrame(renderLoop);
     return () => cancelAnimationFrame(animId);
-  }, [activeScene, showWalkmap, selectedAgentId, hoveredRoomId]);
+  }, [activeScene, showWalkmap, selectedAgentId, hoveredRoomId, agentQuickCardOpen, inspectorOpen]);
 
-  // Handle Mouse Hover on 1280x720 Canvas to highlight Building Doorways & Facade Preview Cards
+  // Hover on Canvas -> Building Doorways & Facade Preview Cards
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (activeScene !== 'CAMPUS') {
       if (hoveredRoomId) setHoveredRoomId(null);
@@ -564,9 +601,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
     }
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * (1280 / rect.width);
-    const my = (e.clientY - rect.top) * (720 / rect.height);
+    const { x: mx, y: my } = clientToCanvasCoords(canvas, e.clientX, e.clientY);
 
     const hitBuilding = CAMPUS_BUILDING_DOORWAYS.find((b) => {
       const nearDoor = Math.hypot(mx - b.campusDoorX, my - b.campusDoorY) <= 34;
@@ -581,17 +616,13 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
     setHoveredRoomId(hitBuilding ? hitBuilding.roomId : null);
   };
 
-  // Handle Mouse Click on 1280x720 Canvas (Select Agent, Enter Building, Exit Room, or Pathfind A0)
+  // Click on Canvas -> Select Agent, Enter Building, Exit Room, or Pathfind A0
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = 1280 / rect.width;
-    const scaleY = 720 / rect.height;
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    const { x: clickX, y: clickY } = clientToCanvasCoords(canvas, e.clientX, e.clientY);
 
-    // 1. Check if user clicked on an agent
+    // 1. Check Agent Hit
     const hitRadius = activeScene === 'CAMPUS' ? 24 : 36;
     const clickedAgent = agents.find((ag) => {
       const inScene =
@@ -607,11 +638,11 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
     if (clickedAgent) {
       setSelectedAgentId(clickedAgent.id);
-      setInspectorOpen(true);
+      setAgentQuickCardOpen(true);
       return;
     }
 
-    // 2. If on Campus, check if user clicked a Building Doorway or Roof to enter its Interior Room
+    // 2. Building Doorway Hit on Campus
     if (activeScene === 'CAMPUS') {
       const clickedBuilding = CAMPUS_BUILDING_DOORWAYS.find((b) => {
         const nearDoor = Math.hypot(clickX - b.campusDoorX, clickY - b.campusDoorY) <= 32;
@@ -628,21 +659,22 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         return;
       }
     } else {
-      // 3. If inside a Room (00..08), check if user clicked the Southern Exit Doorway Badge
+      // 3. Southern Exit Doorway inside Room
       if (clickY >= 648 && clickX >= 510 && clickX <= 770) {
         handleEnterScene('CAMPUS');
         return;
       }
     }
 
-    // 4. Otherwise move A0 Amadeus via A* Pathfinding
+    // 4. Move A0 Amadeus via A* Pathfinding
+    setAgentQuickCardOpen(false);
     const a0 = agents.find((a) => a.id === 'a0-amadeus');
     if (a0) {
       fsmRef.current.setA0PathTo(activeScene, a0.x, a0.y, clickX, clickY);
     }
   };
 
-  // Hot-import PNG Sprite Sheets or Map/Room PNGs via File Picker or Drag & Drop
+  // Hot-import Sprite Sheets or Map/Room assets
   const processImportedFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     Array.from(files).forEach((file) => {
@@ -654,28 +686,28 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
           const lower = file.name.toLowerCase();
           if (lower.includes('campus') || lower.includes('map')) {
             registerCustomSceneBackground('CAMPUS', img);
-            triggerToast(`🗺 Carte Overworld "${file.name}" importée !`);
+            triggerToast(`🗺 Carte Overworld "${file.name}" importée`);
           } else if (lower.includes('room-00') || lower.includes('city-hall')) {
             registerCustomSceneBackground('ROOM_00', img);
-            triggerToast(`🏛 Salle City Hall "${file.name}" importée !`);
+            triggerToast(`🏛 Salle City Hall "${file.name}" importée`);
           } else if (lower.includes('hulk')) {
             registerCustomSpritePng('a0_hulk', img, 3, 4);
-            triggerToast(`⚡ Sprite 3x4 Hulk "${file.name}" importé avec Auto-ChromaKey !`);
+            triggerToast(`⚡ Sprite Hulk "${file.name}" importé`);
           } else if (lower.includes('amadeus') || lower.includes('hoody') || lower.includes('a0')) {
             registerCustomSpritePng('a0_hoody', img, 3, 4);
-            triggerToast(`🧥 Sprite 3x4 A0 Amadeus "${file.name}" importé avec Auto-ChromaKey !`);
+            triggerToast(`🧥 Sprite A0 "${file.name}" importé`);
           } else if (lower.includes('phone')) {
             registerCustomSpritePng('b1_phone', img, 3, 4);
-            triggerToast(`📲 Sprite B1 Phone Dispatch "${file.name}" importé !`);
+            triggerToast(`📲 Sprite Phone Dispatch "${file.name}" importé`);
           } else if (lower.includes('ceo') || lower.includes('b1')) {
             registerCustomSpritePng('b1_walk', img, 3, 4);
-            triggerToast(`👩‍💼 Sprite 3x4 B1 CEO "${file.name}" importé !`);
+            triggerToast(`👩‍💼 Sprite B1 CEO "${file.name}" importé`);
           } else if (lower.includes('vest') || lower.includes('b3')) {
             registerCustomSpritePng('b3_worker_yellow_vest', img, 3, 4);
-            triggerToast(`🦺 Sprite 3x4 Worker B3 Gilet Jaune "${file.name}" importé !`);
+            triggerToast(`🦺 Sprite B3 "${file.name}" importé`);
           } else {
             registerCustomSpritePng('a0_hoody', img, 3, 4);
-            triggerToast(`✨ Planche "${file.name}" découpée (3x4 + ChromaKey) !`);
+            triggerToast(`✨ Planche "${file.name}" découpée`);
           }
         };
         img.src = String(reader.result);
@@ -685,182 +717,357 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
   };
 
   const blockedTasks = countBlockedTasks(agents);
+  const totalTasks = agents.reduce((acc, ag) => acc + ag.tasks.length, 0);
+  const pendingTasks = agents.reduce(
+    (acc, ag) => acc + ag.tasks.filter((t) => t.status !== 'COMPLETED').length,
+    0
+  );
+  const totalReceipts = agents.reduce((acc, ag) => acc + ag.receipts.length, 0);
   const selectedAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
+  const selectedCurrentTask =
+    selectedAgent.tasks.find((t) => t.status !== 'COMPLETED') || selectedAgent.tasks[0];
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Top Action Toolbar for Admin Agent Village */}
-      <div className="bg-[#09141d] border border-emerald-500/25 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-lg">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Scene / Room Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5">
-            <DoorOpen className="w-4 h-4 text-emerald-400" />
-            <select
-              id="village-scene-select"
-              value={activeScene}
-              onChange={(e) => handleEnterScene(e.target.value as SceneLocationId)}
-              className="bg-transparent text-xs font-mono text-slate-100 focus:outline-none"
-            >
-              <option value="CAMPUS" className="bg-slate-900">
-                🌍 Overworld : Campus Solarpunk (Échelle 1/22)
-              </option>
-              {CAMPUS_BUILDING_DOORWAYS.map((b) => (
-                <option key={b.roomId} value={b.roomId} className="bg-slate-900">
-                  🏛 Intérieur HD : {b.label} (Échelle 1/12)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Walkmap Toggle (Key M) */}
-          <button
-            id="toggle-walkmap-btn"
-            onClick={() => setShowWalkmap((p) => !p)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 border transition ${
-              showWalkmap
-                ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
-                : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
-            }`}
-          >
-            <Map className="w-3.5 h-3.5" />
-            🗺 Walkmap (M)
-          </button>
-
-          {/* Call B1 CEO (Double-N) */}
-          <button
-            id="call-b1-ceo-btn"
-            onClick={() => setCallB1ModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 flex items-center gap-1.5 transition"
-          >
-            <PhoneCall className="w-3.5 h-3.5 text-cyan-300" />
-            📲 Call B1 CEO (Double-N)
-          </button>
-
-          {/* Call Town Hall (Key C) */}
-          <button
-            id="call-town-hall-btn"
-            onClick={handleCallTownHall}
-            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 flex items-center gap-1.5 transition"
-          >
-            <Landmark className="w-3.5 h-3.5 text-amber-300" />
-            🏛 Call Town Hall (C)
-          </button>
-
-          {/* Hulk Unblock Mode (Key H) */}
-          <button
-            id="toggle-hulk-mode-btn"
-            onClick={toggleHulkMode}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 border transition ${
-              isHulkMode
-                ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow-lg shadow-emerald-500/30 animate-pulse'
-                : 'bg-emerald-950/60 hover:bg-emerald-900/60 border-emerald-500/50 text-emerald-300'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            ⚡ Mode Hulk UNBLOCK (H)
-          </button>
-        </div>
-
-        {/* Right Controls: Import PNGs Drive + Inspector Toggle */}
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            multiple
-            className="hidden"
-            onChange={(e) => processImportedFiles(e.target.files)}
-          />
-          <button
-            id="import-drive-pngs-btn"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 rounded-lg text-xs font-mono bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 flex items-center gap-1.5"
-            title="Glisser-déposer ou sélectionner des planches PNG 3x4 / cartes depuis Google Drive"
-          >
-            <FolderUp className="w-3.5 h-3.5 text-emerald-400" />
-            📂 Importer PNGs Drive
-          </button>
-
-          <button
-            id="toggle-inspector-btn"
-            onClick={() => setInspectorOpen((p) => !p)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 border ${
-              inspectorOpen
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
-                : 'bg-slate-900 border-slate-700 text-slate-300'
-            }`}
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            Inspecteur (T)
-          </button>
-        </div>
+    <div
+      className="relative w-screen h-[100dvh] overflow-hidden bg-[#040a0f]"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        processImportedFiles(e.dataTransfer.files);
+      }}
+    >
+      {/* 1. FULLSCREEN INTERACTIVE VILLAGE MAP CANVAS (100vw x 100dvh, object-contain preserves full campus) */}
+      <div
+        className="w-full h-full flex items-center justify-center transition-transform duration-200 ease-out"
+        style={{ transform: `scale(${zoomLevel})` }}
+      >
+        <canvas
+          id="admin-village-canvas"
+          ref={canvasRef}
+          width={1280}
+          height={720}
+          onClick={handleCanvasClick}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseLeave={() => setHoveredRoomId(null)}
+          className="w-full h-full object-contain block cursor-crosshair select-none"
+        />
       </div>
 
-      {/* Alert Banner when a task is in BLOCKED_2X */}
-      {blockedTasks.length > 0 && (
-        <div className="bg-red-950/60 border border-red-500/60 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs text-red-200">
-            <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 animate-bounce" />
-            <span>
-              <b>ALERTE ESCALADE BLOCKED_2X ({blockedTasks.length}) :</b> La tâche{' '}
-              <code className="font-mono text-red-300">{blockedTasks[0].id}</code> (
-              {blockedTasks[0].title}) a subi 2 rejets B2 consécutifs.
-            </span>
-          </div>
-          <button
-            onClick={() => handleUnblockTaskHulk(blockedTasks[0].ownerB2, blockedTasks[0])}
-            className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs flex items-center gap-1.5 shadow-md"
-          >
-            <Zap className="w-3.5 h-3.5" />⚡ Débloquer avec A0 Hulk (UNBLOCK)
-          </button>
-        </div>
-      )}
+      {/* 2. FLOATING TOP-CENTER NAVIGATION BAR (Inspired by Reference Screenshot #2) */}
+      <nav
+        aria-label="Navigation Village"
+        className="fixed top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full bg-[#071119]/80 backdrop-blur-xl border border-white/10 shadow-2xl max-w-[96vw] overflow-x-auto"
+      >
+        <button
+          id="nav-village-map-btn"
+          onClick={() => handleEnterScene('CAMPUS')}
+          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition ${
+            activeScene === 'CAMPUS' && activeExperience === 'ADMIN_VILLAGE'
+              ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/40'
+              : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Compass className="w-3.5 h-3.5" />
+          <span>Village</span>
+        </button>
 
+        <button
+          id="nav-town-hall-btn"
+          onClick={() => handleEnterScene('ROOM_00')}
+          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition ${
+            activeScene === 'ROOM_00'
+              ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40'
+              : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Landmark className="w-3.5 h-3.5" />
+          <span>Town Hall</span>
+        </button>
+
+        <button
+          id="nav-agents-btn"
+          onClick={() => setInspectorOpen((p) => !p)}
+          className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition ${
+            inspectorOpen
+              ? 'bg-cyan-500/25 text-cyan-200 border border-cyan-400/40'
+              : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Agents</span>
+        </button>
+
+        <button
+          id="call-b1-ceo-btn"
+          onClick={() => setCallB1ModalOpen(true)}
+          className="px-3 py-1 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-1.5 whitespace-nowrap transition"
+          title="Assigner une tâche via B1 CEO (Double-N)"
+        >
+          <CheckSquare className="w-3.5 h-3.5 text-cyan-300" />
+          <span>Tasks</span>
+        </button>
+
+        <button
+          id="open-memory-md-btn"
+          onClick={onOpenMemory}
+          className="px-3 py-1 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 flex items-center gap-1.5 whitespace-nowrap transition"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-emerald-300" />
+          <span>Memory</span>
+        </button>
+
+        <div className="w-px h-4 bg-white/15 mx-0.5 shrink-0" />
+
+        {/* Experience Switcher Pills (Driver House 3D + Customer World) */}
+        <button
+          id="nav-driver-house-btn"
+          onClick={() => onSelectExperience('DRIVER_HOUSE_3D')}
+          className="px-2.5 py-1 rounded-full text-xs font-medium text-slate-300 hover:text-cyan-200 hover:bg-white/10 flex items-center gap-1 whitespace-nowrap transition"
+          title="Basculer vers Driver House 3D Twin"
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span className="hidden xl:inline">Driver 3D</span>
+        </button>
+
+        <button
+          id="nav-customer-world-btn"
+          onClick={() => onSelectExperience('CUSTOMER_WORLD')}
+          className="px-2.5 py-1 rounded-full text-xs font-medium text-slate-300 hover:text-amber-200 hover:bg-white/10 flex items-center gap-1 whitespace-nowrap transition"
+          title="Basculer vers Customer World (CVG)"
+        >
+          <CarFront className="w-3.5 h-3.5" />
+          <span className="hidden xl:inline">Customer</span>
+        </button>
+
+        {/* Highlighted Warm Golden Primary Action: CALL MEETING */}
+        <button
+          id="call-town-hall-btn"
+          onClick={handleCallTownHall}
+          className="ml-1 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center gap-1.5 whitespace-nowrap shadow-md transition"
+          title="Convoquer tous les Directeurs B2 au Town Hall (Touche C)"
+        >
+          <Landmark className="w-3.5 h-3.5" />
+          <span>CALL MEETING</span>
+        </button>
+      </nav>
+
+      {/* 3. LEFT-SIDE ICON-ONLY FLOATING CONTEXTUAL TOOLBAR */}
+      <div className="fixed left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5 p-1.5 rounded-2xl bg-[#071119]/80 backdrop-blur-xl border border-white/10 shadow-xl">
+        <button
+          onClick={() => handleEnterScene('CAMPUS')}
+          title="Campus Overworld (Vue Village)"
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+            activeScene === 'CAMPUS'
+              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/40'
+              : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Compass className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => setZoomLevel((z) => Math.min(1.6, Number((z + 0.15).toFixed(2))))}
+          title="Zoom Avant (+)"
+          className="w-9 h-9 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => setZoomLevel((z) => Math.max(0.85, Number((z - 0.15).toFixed(2))))}
+          title="Zoom Arrière (-)"
+          className="w-9 h-9 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+
+        {zoomLevel !== 1 && (
+          <button
+            onClick={() => setZoomLevel(1)}
+            title="Réinitialiser Zoom (1:1)"
+            className="w-9 h-9 rounded-xl text-amber-300 hover:bg-white/10 flex items-center justify-center transition"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        )}
+
+        <div className="h-px bg-white/10 my-0.5" />
+
+        <button
+          id="toggle-walkmap-btn"
+          onClick={() => setShowWalkmap((p) => !p)}
+          title="Afficher / Masquer Walkmap (M)"
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+            showWalkmap
+              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/40'
+              : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Map className="w-4 h-4" />
+        </button>
+
+        <div className="relative">
+          <button
+            id="location-selector-btn"
+            onClick={() => setLocationMenuOpen((p) => !p)}
+            title="Sélecteur de Bâtiment / Salle"
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+              locationMenuOpen
+                ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-400/40'
+                : 'text-slate-300 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <DoorOpen className="w-4 h-4" />
+          </button>
+
+          {locationMenuOpen && (
+            <div className="absolute left-12 top-0 w-60 bg-[#071119]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-2 shadow-2xl space-y-1 z-30">
+              <button
+                onClick={() => handleEnterScene('CAMPUS')}
+                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-mono flex items-center justify-between ${
+                  activeScene === 'CAMPUS'
+                    ? 'bg-emerald-500/25 text-emerald-200'
+                    : 'text-slate-300 hover:bg-white/10'
+                }`}
+              >
+                <span>🌍 Overworld Campus</span>
+                <span className="text-[10px] opacity-70">1/22</span>
+              </button>
+              {CAMPUS_BUILDING_DOORWAYS.map((b) => (
+                <button
+                  key={b.roomId}
+                  onClick={() => handleEnterScene(b.roomId)}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-mono flex items-center justify-between ${
+                    activeScene === b.roomId
+                      ? 'bg-cyan-500/25 text-cyan-200'
+                      : 'text-slate-300 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="truncate">{b.label}</span>
+                  <span className="text-[10px] opacity-70">{b.roomId}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={handleCallTownHall}
+          title="Accès Town Hall — Room 00 (C)"
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+            activeScene === 'ROOM_00'
+              ? 'bg-amber-500/25 text-amber-300 border border-amber-400/40'
+              : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+        </button>
+
+        <button
+          id="toggle-hulk-mode-btn"
+          onClick={toggleHulkMode}
+          title="Mode Hulk UNBLOCK x2 (H)"
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+            isHulkMode
+              ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 animate-pulse'
+              : 'text-emerald-300 hover:bg-white/10'
+          }`}
+        >
+          <Zap className="w-4 h-4" />
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          multiple
+          className="hidden"
+          onChange={(e) => processImportedFiles(e.target.files)}
+        />
+        <button
+          id="import-drive-pngs-btn"
+          onClick={() => fileInputRef.current?.click()}
+          title="Importer planches Drive (PNG/WebP)"
+          className="w-9 h-9 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 flex items-center justify-center transition"
+        >
+          <FolderUp className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* 4. DISCREET FLOATING TOAST (Top-Right, Auto-Dismisses) */}
       {liveToast && (
-        <div className="bg-emerald-950/80 border border-emerald-400/50 rounded-xl px-4 py-2 text-xs font-mono text-emerald-200 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-[#071119]/90 backdrop-blur-xl border border-emerald-400/40 text-xs font-mono text-emerald-200 flex items-center gap-2 shadow-xl pointer-events-none">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>{liveToast}</span>
         </div>
       )}
 
-      {/* Main Split View: 1280x720 Responsive Canvas + Agent Inspector Drawer */}
-      <div
-        className="flex flex-col lg:flex-row gap-3 items-start"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          processImportedFiles(e.dataTransfer.files);
-        }}
-      >
-        <div className="flex-1 w-full bg-[#050c11] border border-emerald-500/30 rounded-2xl overflow-hidden shadow-2xl relative">
-          <canvas
-            id="admin-village-canvas"
-            ref={canvasRef}
-            width={1280}
-            height={720}
-            onClick={handleCanvasClick}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseLeave={() => setHoveredRoomId(null)}
-            className="w-full h-auto aspect-video block cursor-crosshair select-none"
-          />
-
-          {/* Bottom-Left HUD Overlay on Canvas */}
-          <div className="absolute bottom-3 left-3 bg-slate-950/85 border border-slate-800 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-300 pointer-events-none flex flex-wrap items-center gap-3">
-            <span>
-              🎮 <b>ZQSD/Flèches</b> ou <b>Clic Sol</b> : Déplacer A0
-            </span>
-            <span>•</span>
-            <span>
-              <b>B1 Elena</b> : Suit A0 (18 frames)
-            </span>
-            <span>•</span>
-            <span>
-              <b>Clic Agent</b> : Inspecter AGENT.md / NOTES.md / RECEIPTS.json
-            </span>
+      {/* 5. COMPACT FLOATING CONTEXTUAL AGENT CARD (Opens on Click, Bottom-Right above Dock) */}
+      {agentQuickCardOpen && !inspectorOpen && (
+        <div
+          id="agent-quick-card"
+          className="fixed bottom-14 right-4 z-30 w-80 bg-[#07111a]/92 backdrop-blur-xl border border-white/15 rounded-2xl p-4 shadow-2xl space-y-3"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className="w-3.5 h-3.5 rounded-full shrink-0 ring-2 ring-white/20"
+                style={{ backgroundColor: selectedAgent.roofColor }}
+              />
+              <div className="truncate">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                    {selectedAgent.tier}
+                  </span>
+                  <h4 className="text-xs font-bold text-white truncate">{selectedAgent.name}</h4>
+                </div>
+                <p className="text-[11px] text-slate-400 truncate">{selectedAgent.title}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setAgentQuickCardOpen(false)}
+              className="text-slate-400 hover:text-white p-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-        </div>
 
-        {inspectorOpen && (
+          <div className="flex items-center justify-between text-[11px] font-mono bg-white/5 rounded-xl px-2.5 py-1.5">
+            <span className="text-slate-400">Posture: {selectedAgent.posture}</span>
+            <span className="text-cyan-300">{selectedAgent.currentLocation}</span>
+          </div>
+
+          {selectedCurrentTask && (
+            <div className="text-xs bg-white/5 rounded-xl p-2.5 space-y-1">
+              <div className="flex items-center justify-between text-[10px] font-mono">
+                <span className="text-slate-400">{selectedCurrentTask.id}</span>
+                <span
+                  className={
+                    selectedCurrentTask.status === 'BLOCKED_2X'
+                      ? 'text-red-400 font-bold'
+                      : 'text-emerald-300'
+                  }
+                >
+                  {selectedCurrentTask.status}
+                </span>
+              </div>
+              <p className="text-slate-200 text-[11px] line-clamp-2">{selectedCurrentTask.title}</p>
+            </div>
+          )}
+
+          <button
+            onClick={() => setInspectorOpen(true)}
+            className="w-full py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-mono font-semibold flex items-center justify-center gap-1.5 transition"
+          >
+            <span>Tasks · Receipts · Notes · Specs</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* 6. FLOATING AGENT INSPECTOR OVERLAY DRAWER (On-Demand Only) */}
+      {inspectorOpen && (
+        <div className="fixed top-16 right-3 bottom-14 w-[420px] max-w-[calc(100vw-24px)] z-30">
           <AgentInspectorDrawer
             agent={selectedAgent}
             allAgents={agents}
@@ -875,12 +1082,121 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             onSimulateReject2x={handleSimulateReject2x}
             onExecuteTaskSop={handleExecuteTaskSop}
           />
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Call B1 CEO Quick Dispatch Modal (Double-N) */}
+      {/* 7. DISCREET BOTTOM FLOATING STATUS DOCK */}
+      <footer className="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-4 py-1.5 rounded-full bg-[#071119]/80 backdrop-blur-xl border border-white/10 shadow-2xl text-[11px] font-mono text-slate-300 max-w-[96vw] overflow-x-auto whitespace-nowrap">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span>{agents.length} Agents</span>
+        </span>
+
+        <span className="text-white/20">·</span>
+
+        <span>
+          {pendingTasks}/{totalTasks} Tasks · {totalReceipts} Reçus
+        </span>
+
+        <span className="text-white/20">·</span>
+
+        {/* Discreet BLOCKED_2X Notification Indicator */}
+        <button
+          id="escalation-indicator-btn"
+          onClick={() => setEscalationDrawerOpen((p) => !p)}
+          className={`px-2 py-0.5 rounded-full flex items-center gap-1 transition ${
+            blockedTasks.length > 0
+              ? 'bg-red-500/25 border border-red-400/60 text-red-200 animate-pulse'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+          title="Ouvrir le tiroir d'escalade BLOCKED_2X"
+        >
+          <ShieldAlert className="w-3 h-3" />
+          <span>{blockedTasks.length} Blocked</span>
+        </button>
+
+        <span className="text-white/20">·</span>
+
+        <button
+          id="open-human-gates-btn"
+          onClick={onOpenHumanGates}
+          className="flex items-center gap-1 text-amber-300 hover:text-amber-200 transition"
+          title="Gérer les 5 Human Gates Souverains A0"
+        >
+          <ShieldCheck className="w-3 h-3" />
+          <span>Gates {approvedGatesCount}/5</span>
+        </button>
+
+        <span className="text-white/20">·</span>
+
+        <span className="flex items-center gap-1 text-slate-400">
+          <HardDrive
+            className={`w-3 h-3 ${isDiskConnected ? 'text-emerald-400' : 'text-amber-400'}`}
+          />
+          <span>{isDiskConnected ? './agents/ Live' : 'Local Sync'}</span>
+        </span>
+      </footer>
+
+      {/* 8. COMPACT ESCALATION DRAWER FOR BLOCKED_2X TASKS */}
+      {escalationDrawerOpen && (
+        <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-30 w-[520px] max-w-[calc(100vw-24px)] bg-[#09141d]/95 backdrop-blur-xl border border-red-500/50 rounded-2xl p-4 shadow-2xl space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-red-300">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+              <span>Escalades Gouvernance BLOCKED_2X ({blockedTasks.length})</span>
+            </div>
+            <button
+              onClick={() => setEscalationDrawerOpen(false)}
+              className="text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {blockedTasks.length === 0 ? (
+            <p className="text-xs text-slate-400 font-mono py-2">
+              Aucune tâche bloquée actuellement. Toutes les SOP respectent les critères TDD.
+            </p>
+          ) : (
+            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+              {blockedTasks.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-3 rounded-xl bg-red-950/40 border border-red-500/35 space-y-2"
+                >
+                  <div className="flex items-center justify-between text-[11px] font-mono">
+                    <span className="font-bold text-red-200">{t.id}</span>
+                    <span className="text-red-300">Rejets: {t.rejectionCount}/2</span>
+                  </div>
+                  <p className="text-xs text-slate-100">{t.title}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
+                    <span>
+                      B2: {t.ownerB2} → B3: {t.workerB3}
+                    </span>
+                    {t.humanGateId && (
+                      <span className="text-amber-300">Gate: {t.humanGateId}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      void handleUnblockTaskHulk(t.ownerB2, t);
+                      setEscalationDrawerOpen(false);
+                    }}
+                    className="w-full py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>⚡ Débloquer avec A0 Hulk (UNBLOCK)</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 9. CALL B1 CEO QUICK DISPATCH MODAL (Double-N or Tasks) */}
       {callB1ModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0b1824] border border-cyan-400/50 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
@@ -890,7 +1206,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
                     📲 Call B1 CEO — Elena Rostova (Dispatch Anti-Orphan-Work)
                   </h3>
                   <p className="text-xs text-slate-400">
-                    B1 sort son téléphone (`PHONE_DISPATCH`), écrit dans `TASKS.json` et active le Worker B3 en gilet jaune.
+                    B1 sort son téléphone (PHONE_DISPATCH), écrit dans TASKS.json et active le Worker B3.
                   </p>
                 </div>
               </div>
@@ -918,8 +1234,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
                 >
                   {Object.values(DOMAIN_ROUTING_MAP).map((cfg) => (
                     <option key={cfg.domain} value={cfg.domain}>
-                      {cfg.domain} — Directeur: {cfg.b2AgentId} → Worker: {cfg.b3WorkerId} (
-                      {cfg.roomId})
+                      {cfg.domain} — {cfg.b2AgentId} → {cfg.b3WorkerId} ({cfg.roomId})
                     </option>
                   ))}
                 </select>

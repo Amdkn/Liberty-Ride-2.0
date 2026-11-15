@@ -84,10 +84,10 @@ export const AgentInspectorDrawer: React.FC<AgentInspectorDrawerProps> = ({
   return (
     <aside
       id="agent-inspector-drawer"
-      className="w-full lg:w-[450px] bg-[#09141d]/95 border-l border-emerald-500/30 flex flex-col h-[720px] shrink-0 shadow-2xl backdrop-blur-md"
+      className="w-full h-full bg-[#07111a]/92 border border-emerald-500/35 rounded-2xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl"
     >
       {/* Top Header */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-[#060e15]">
+      <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between bg-[#050c12]/90">
         <div className="flex items-center gap-3 min-w-0">
           <span
             className="w-4 h-4 rounded-full shrink-0 ring-2 ring-white/20"
