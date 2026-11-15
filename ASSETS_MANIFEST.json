@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "project": "Liberty Ride 2.0 (LD01) — A'Space OS",
   "canvasResolution": {
     "width": 1280,
@@ -13,8 +13,8 @@
     "CAMPUS": {
       "id": "CAMPUS",
       "label": "Solarpunk Campus Overworld (Erlanger – CVG Ring)",
-      "assetPath": "/assets/maps/campus-overworld-hd.png",
-      "fallbackProcedural": true
+      "assetPath": "/assets/maps/campus-overworld-hd.webp",
+      "facadesGridPath": "/assets/maps/campus-facades-grid.webp"
     }
   },
   "rooms": {
@@ -23,63 +23,71 @@
       "label": "Room 00 — City Hall Executive Boardroom (Table-Maquette 15 Fauteuils)",
       "domain": "EXECUTIVE",
       "roofColor": "#10B981",
-      "assetPath": "/assets/rooms/room-00-city-hall.png"
+      "assetPath": "/assets/rooms/room-00-city-hall.webp"
     },
     "ROOM_01": {
       "id": "ROOM_01",
       "label": "Room 01 — Operations & CVG Dispatch Center (Marcus Vance)",
       "domain": "OPERATIONS",
       "roofColor": "#00E5FF",
-      "assetPath": "/assets/rooms/room-01-operations.png"
+      "assetPath": "/assets/rooms/room-01-operations.webp",
+      "facadePath": "/assets/maps/facades/facade-01-operations.webp"
     },
     "ROOM_02": {
       "id": "ROOM_02",
       "label": "Room 02 — Growth & Media Botanical Studio (Clara Morel)",
       "domain": "GROWTH",
       "roofColor": "#00E676",
-      "assetPath": "/assets/rooms/room-02-growth.png"
+      "assetPath": "/assets/rooms/room-02-growth.webp",
+      "facadePath": "/assets/maps/facades/facade-02-growth.webp"
     },
     "ROOM_03": {
       "id": "ROOM_03",
       "label": "Room 03 — Products & 3D Twin Glass Atelier (Liam Chen)",
       "domain": "PRODUCTS",
       "roofColor": "#2979FF",
-      "assetPath": "/assets/rooms/room-03-products.png"
+      "assetPath": "/assets/rooms/room-03-products.webp",
+      "facadePath": "/assets/maps/facades/facade-03-products.webp"
     },
     "ROOM_04": {
       "id": "ROOM_04",
       "label": "Room 04 — Sales & $100M B2B Partner Lounge (Sofia Alverez)",
       "domain": "SALES",
       "roofColor": "#FF6D00",
-      "assetPath": "/assets/rooms/room-04-sales.png"
+      "assetPath": "/assets/rooms/room-04-sales.webp",
+      "facadePath": "/assets/maps/facades/facade-04-sales.webp"
     },
     "ROOM_05": {
       "id": "ROOM_05",
       "label": "Room 05 — Finance & Unit Economics Rotunda (Arthur Sterling)",
       "domain": "FINANCE",
       "roofColor": "#FFD600",
-      "assetPath": "/assets/rooms/room-05-finance.png"
+      "assetPath": "/assets/rooms/room-05-finance.webp",
+      "facadePath": "/assets/maps/facades/facade-05-finance.webp"
     },
     "ROOM_06": {
       "id": "ROOM_06",
       "label": "Room 06 — Legal, KYTC & CVG Compliance Chamber (Nadia Benali)",
       "domain": "LEGAL",
       "roofColor": "#ECEFF1",
-      "assetPath": "/assets/rooms/room-06-legal.png"
+      "assetPath": "/assets/rooms/room-06-legal.webp",
+      "facadePath": "/assets/maps/facades/facade-06-legal.webp"
     },
     "ROOM_07": {
       "id": "ROOM_07",
       "label": "Room 07 — IT, Supabase RLS & SRE Core (Viktor Kovács)",
       "domain": "IT",
       "roofColor": "#D500F9",
-      "assetPath": "/assets/rooms/room-07-it.png"
+      "assetPath": "/assets/rooms/room-07-it.webp",
+      "facadePath": "/assets/maps/facades/facade-07-it.webp"
     },
     "ROOM_08": {
       "id": "ROOM_08",
       "label": "Room 08 — People & Driver Business Academy Pergola (Maya Lin)",
       "domain": "PEOPLE",
       "roofColor": "#FF4081",
-      "assetPath": "/assets/rooms/room-08-people.png"
+      "assetPath": "/assets/rooms/room-08-people.webp",
+      "facadePath": "/assets/maps/facades/facade-08-people.webp"
     }
   },
   "sprites": {
@@ -88,147 +96,177 @@
       "agentId": "a0-amadeus",
       "state": "NORMAL_HOODY",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/a0/amadeus-hoody-walk-3x4.png"
+      "assetPath": "/assets/sprites/a0/amadeus-hoody-walk-3x4.webp"
+    },
+    "a0_ceo_suit": {
+      "id": "a0_ceo_suit",
+      "agentId": "a0-amadeus",
+      "state": "CEO_SUIT",
+      "grid": { "cols": 3, "rows": 4 },
+      "assetPath": "/assets/sprites/a0/amadeus-ceo-suit-3x4.webp"
+    },
+    "a0_seated": {
+      "id": "a0_seated",
+      "agentId": "a0-amadeus",
+      "state": "SEATED",
+      "grid": { "cols": 1, "rows": 1 },
+      "assetPath": "/assets/sprites/a0/amadeus-ceo-seated-front.webp"
     },
     "a0_hulk": {
       "id": "a0_hulk",
       "agentId": "a0-amadeus",
       "state": "UNBLOCK_HULK",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/a0/amadeus-hulk-unblock-3x4.png"
+      "assetPath": "/assets/sprites/a0/amadeus-hulk-unblock-3x4.webp"
     },
     "b1_walk": {
       "id": "b1_walk",
       "agentId": "b1-ceo-chief-of-staff",
       "state": "WALK_FOLLOW",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b1/ceo-women-walk-3x4.png"
+      "assetPath": "/assets/sprites/b1/ceo-women-walk-3x4.webp"
     },
     "b1_phone": {
       "id": "b1_phone",
       "agentId": "b1-ceo-chief-of-staff",
       "state": "PHONE_DISPATCH",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b1/ceo-women-phone-dispatch.png"
+      "assetPath": "/assets/sprites/b1/ceo-women-phone-dispatch.webp"
     },
     "b2_operations_standing": {
       "id": "b2_operations_standing",
       "agentId": "b2-01-operations",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-01-operations-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-01-operations-3x4.webp"
     },
     "b2_operations_seated": {
       "id": "b2_operations_seated",
       "agentId": "b2-01-operations",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-01-operations-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-01-operations-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-01-operations-seated-side.webp"
     },
     "b2_growth_standing": {
       "id": "b2_growth_standing",
       "agentId": "b2-02-growth",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-02-growth-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-02-growth-3x4.webp"
     },
     "b2_growth_seated": {
       "id": "b2_growth_seated",
       "agentId": "b2-02-growth",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-02-growth-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-02-growth-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-02-growth-seated-side.webp"
     },
     "b2_products_standing": {
       "id": "b2_products_standing",
       "agentId": "b2-03-products",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-03-products-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-03-products-3x4.webp"
     },
     "b2_products_seated": {
       "id": "b2_products_seated",
       "agentId": "b2-03-products",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-03-products-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-03-products-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-03-products-seated-side.webp"
     },
     "b2_sales_standing": {
       "id": "b2_sales_standing",
       "agentId": "b2-04-sales",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-04-sales-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-04-sales-3x4.webp"
     },
     "b2_sales_seated": {
       "id": "b2_sales_seated",
       "agentId": "b2-04-sales",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-04-sales-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-04-sales-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-04-sales-seated-side.webp"
     },
     "b2_finance_standing": {
       "id": "b2_finance_standing",
       "agentId": "b2-05-finance",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-05-finance-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-05-finance-3x4.webp"
     },
     "b2_finance_seated": {
       "id": "b2_finance_seated",
       "agentId": "b2-05-finance",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-05-finance-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-05-finance-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-05-finance-seated-side.webp"
     },
     "b2_legal_standing": {
       "id": "b2_legal_standing",
       "agentId": "b2-06-legal",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-06-legal-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-06-legal-3x4.webp"
     },
     "b2_legal_seated": {
       "id": "b2_legal_seated",
       "agentId": "b2-06-legal",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-06-legal-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-06-legal-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-06-legal-seated-side.webp"
     },
     "b2_it_standing": {
       "id": "b2_it_standing",
       "agentId": "b2-07-it",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-07-it-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-07-it-3x4.webp"
     },
     "b2_it_seated": {
       "id": "b2_it_seated",
       "agentId": "b2-07-it",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-07-it-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-07-it-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-07-it-seated-side.webp"
     },
     "b2_people_standing": {
       "id": "b2_people_standing",
       "agentId": "b2-08-people",
       "state": "STANDING",
+      "series": "Caracteres_Serie_2",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b2-standing/b2-08-people-3x4.png"
+      "assetPath": "/assets/sprites/b2-standing/b2-08-people-3x4.webp"
     },
     "b2_people_seated": {
       "id": "b2_people_seated",
       "agentId": "b2-08-people",
       "state": "SEATED",
       "grid": { "cols": 1, "rows": 1 },
-      "assetPath": "/assets/sprites/b2-seated/b2-08-people-seated.png"
+      "assetPath": "/assets/sprites/b2-seated/b2-08-people-seated.webp",
+      "sideAssetPath": "/assets/sprites/b2-seated/b2-08-people-seated-side.webp"
     },
     "b3_worker_yellow_vest": {
       "id": "b3_worker_yellow_vest",
       "agentId": "b3-generic-worker",
       "state": "EXECUTING_SOP",
       "grid": { "cols": 3, "rows": 4 },
-      "assetPath": "/assets/sprites/b3-workers/b3-worker-yellow-vest-3x4.png"
+      "assetPath": "/assets/sprites/b3-workers/b3-worker-yellow-vest-3x4.webp"
     }
   }
 }

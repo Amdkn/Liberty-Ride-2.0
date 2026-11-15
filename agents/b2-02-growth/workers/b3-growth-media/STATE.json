@@ -1,0 +1,10 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "room-02-growth",
+  "targetCoords": {
+    "x": 875,
+    "y": 355
+  },
+  "bubbleText": "Exécution SOP Growth & Acquisition -> Génération RECEIPTS.json",
+  "spriteSheet": "/assets/sprites/b3-workers/b3-worker-yellow-vest-3x4.webp"
+}

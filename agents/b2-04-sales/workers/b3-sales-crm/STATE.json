@@ -1,0 +1,10 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "room-04-sales",
+  "targetCoords": {
+    "x": 875,
+    "y": 355
+  },
+  "bubbleText": "Exécution SOP Sales & B2B Offers -> Génération RECEIPTS.json",
+  "spriteSheet": "/assets/sprites/b3-workers/b3-worker-yellow-vest-3x4.webp"
+}

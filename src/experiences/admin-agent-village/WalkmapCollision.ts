@@ -43,23 +43,23 @@ export function getObstaclesForScene(scene: SceneLocationId): ObstacleRect[] {
       { label: 'Mur Ouest', x: 0, y: 0, w: 80, h: 720 },
       { label: 'Mur Est', x: 1200, y: 0, w: 80, h: 720 },
       // Central Boardroom Table with the Illuminated Miniature Village ("Village dans le Village")
-      { label: 'Table-Maquette Village dans le Village', x: 400, y: 255, w: 480, h: 200 },
+      { label: 'Table-Maquette Village dans le Village', x: 420, y: 275, w: 440, h: 165 },
     ];
   }
 
-  // ROOM_01 to ROOM_08 (Domain Interior Rooms)
+  // ROOM_01 to ROOM_08 (Domain Interior Rooms — Calibrated to HD Artwork)
   return [
     { label: 'Mur Nord Pavillon', x: 0, y: 0, w: 1280, h: 130 },
     { label: 'Mur Ouest', x: 0, y: 0, w: 85, h: 720 },
     { label: 'Mur Est', x: 1195, y: 0, w: 85, h: 720 },
-    // B2 Director Desk (Left-Center)
-    { label: 'Bureau Directeur B2', x: 260, y: 280, w: 190, h: 75 },
+    // B2 Director Curved Wooden Executive Desk (Top-Left Quadrant)
+    { label: 'Bureau Directeur B2 (Top-Left)', x: 245, y: 185, w: 195, h: 70 },
     // Domain Centerpiece / Hologram / Table
-    { label: 'Module Central Domaine', x: 560, y: 270, w: 160, h: 120 },
+    { label: 'Module Central Domaine', x: 555, y: 280, w: 170, h: 125 },
     // B3 SOP Workbench (Right side)
-    { label: 'Atelier SOP Technicien B3', x: 820, y: 280, w: 180, h: 85 },
+    { label: 'Atelier SOP Technicien B3', x: 840, y: 235, w: 185, h: 90 },
     // Lounge Sofa Bottom-Left
-    { label: 'Canapé Lounge', x: 150, y: 500, w: 170, h: 75 },
+    { label: 'Canapé Lounge', x: 140, y: 500, w: 185, h: 80 },
   ];
 }
 

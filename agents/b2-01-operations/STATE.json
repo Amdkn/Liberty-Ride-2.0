@@ -1,0 +1,18 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "overworld",
+  "homeRoom": "room-01-operations",
+  "deskCoords": {
+    "x": 345,
+    "y": 248
+  },
+  "targetCoords": {
+    "x": 282,
+    "y": 266
+  },
+  "bubbleText": "Vérification du reçu B3 sur le corridor Erlanger -> CVG (< 4 min).",
+  "spriteSheet": "/assets/sprites/b2-standing/b2-01-operations-3x4.webp",
+  "seatedSprite": "/assets/sprites/b2-seated/b2-01-operations-seated.webp",
+  "worker": "b3-ops-dispatch",
+  "domain": "Operations & Dispatch CVG"
+}

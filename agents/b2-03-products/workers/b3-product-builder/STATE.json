@@ -1,0 +1,10 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "room-03-products",
+  "targetCoords": {
+    "x": 875,
+    "y": 355
+  },
+  "bubbleText": "Exécution SOP Products & Twin UX -> Génération RECEIPTS.json",
+  "spriteSheet": "/assets/sprites/b3-workers/b3-worker-yellow-vest-3x4.webp"
+}

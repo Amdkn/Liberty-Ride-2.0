@@ -1,0 +1,11 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "overworld",
+  "targetCoords": {
+    "x": 600,
+    "y": 425
+  },
+  "bubbleText": "Loi Anti-Orphan-Work active. Suivi A0 (18 frames) & Dispatch Téléphone.",
+  "spriteSheet": "/assets/sprites/b1/ceo-women-walk-3x4.webp",
+  "phoneSprite": "/assets/sprites/b1/ceo-women-phone-dispatch.webp"
+}

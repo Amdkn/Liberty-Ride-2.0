@@ -59,6 +59,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
   const movingMapRef = useRef<Record<string, boolean>>({});
 
   const [activeScene, setActiveScene] = useState<SceneLocationId>('CAMPUS');
+  const [hoveredRoomId, setHoveredRoomId] = useState<SceneLocationId | null>(null);
   const [showWalkmap, setShowWalkmap] = useState<boolean>(false);
   const [isHulkMode, setIsHulkMode] = useState<boolean>(false);
   const [inspectorOpen, setInspectorOpen] = useState<boolean>(true);
@@ -77,6 +78,27 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       setLiveToast((prev) => (prev === msg ? null : prev));
     }, 4200);
   }, []);
+
+  // Enter a Building Room or Return to Campus Overworld
+  const handleEnterScene = useCallback(
+    (target: SceneLocationId) => {
+      const prevScene = activeScene;
+      setActiveScene(target);
+      setHoveredRoomId(null);
+      agentFileBridge.updateAgentsInMemory((list) =>
+        fsmRef.current.transitionToScene(list, target, prevScene)
+      );
+      if (target === 'CAMPUS') {
+        triggerToast('🌍 Retour sur le Campus Solarpunk Overworld (Échelle 1/22).');
+      } else {
+        const bInfo = CAMPUS_BUILDING_DOORWAYS.find((b) => b.roomId === target);
+        triggerToast(
+          `🏛 Entrée dans ${bInfo?.label || target} (Échelle 1/12 — Directeur B2 au bureau & Worker B3 actif).`
+        );
+      }
+    },
+    [activeScene, triggerToast]
+  );
 
   // Toggle A0 Amadeus Hulk Mode (Key H or Button)
   const toggleHulkMode = useCallback(() => {
@@ -153,7 +175,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       >;
       const anchors = DOMAIN_ROOM_ANCHORS[roomKey] || DOMAIN_ROOM_ANCHORS.ROOM_01;
 
-      // Step 1: B2 sits at desk, B3 animates SOP at workbench
+      // Step 1: B2 sits at desk, B3 walks to B2 desk to deliver receipt
       agentFileBridge.updateAgentsInMemory((list) =>
         list.map((ag) => {
           if (ag.id === b2AgentId) {
@@ -169,7 +191,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
           if (ag.id === b3Id) {
             return {
               ...ag,
-              posture: 'EXECUTING_SOP',
+              posture: 'SUBMITTING_RECEIPT',
               targetX: anchors.b3ReceiptDeliveryPoint.x,
               targetY: anchors.b3ReceiptDeliveryPoint.y,
               speechBubble: `🦺 Exécution SOP ${task.id}...`,
@@ -180,7 +202,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         })
       );
 
-      // Step 2: B3 walks to B2 desk to submit receipt, B2 verifies & completes task
+      // Step 2: B3 submits receipt at B2 desk, then returns to workbench
       setTimeout(async () => {
         const completedTask: TaskRecord = {
           ...task,
@@ -195,7 +217,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             if (ag.id === b3Id) {
               return {
                 ...ag,
-                posture: 'SUBMITTING_RECEIPT',
+                posture: 'EXECUTING_SOP',
                 targetX: anchors.b3Workbench.x,
                 targetY: anchors.b3Workbench.y,
                 speechBubble: `🧾 Reçu ${receipt.id} remis !`,
@@ -217,7 +239,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         await agentFileBridge.upsertTaskAndReceipt(b2AgentId, completedTask, receipt, noteLine);
         await agentFileBridge.upsertTaskAndReceipt(b3Id, completedTask, receipt, noteLine);
         triggerToast(`✅ ${b3Id} a remis le reçu ${receipt.id} à ${b2AgentId} (NOTES.md mis à jour).`);
-      }, 1400);
+      }, 1600);
     },
     [agents, triggerToast]
   );
@@ -239,6 +261,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
   // Call Town Hall (Key C or Button): Convene A0, B1, and 8 B2 Directors in Room 00 Seated
   const handleCallTownHall = useCallback(() => {
     setActiveScene('ROOM_00');
+    setHoveredRoomId(null);
     agentFileBridge.updateAgentsInMemory((list) =>
       fsmRef.current.assembleTownHallCouncil(list, Date.now())
     );
@@ -278,7 +301,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
           if (ag.id === routing.b2AgentId) {
             return {
               ...ag,
-              posture: 'SEATED',
+              posture: activeScene === 'CAMPUS' ? 'STANDING' : 'SEATED',
               speechBubble: `📥 Mission reçue de B1 ! Activation ${routing.b3WorkerId}`,
               speechBubbleUntil: Date.now() + 4200,
             };
@@ -308,7 +331,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         void handleExecuteTaskSop(routing.b2AgentId, task);
       }, 2200);
     },
-    [missionTitle, missionDomain, handleExecuteTaskSop, triggerToast]
+    [missionTitle, missionDomain, activeScene, handleExecuteTaskSop, triggerToast]
   );
 
   // Keyboard Listeners (ZQSD/WASD/Arrows, M, Double-N, C, H, T)
@@ -383,8 +406,8 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
         if (ctx) {
           ctx.clearRect(0, 0, 1280, 720);
 
-          // 1. Scene Background
-          renderSceneBackground(ctx, nextScene, frameCountRef.current);
+          // 1. Scene Background (Living WebP Map or HD Interior Room 00..08)
+          renderSceneBackground(ctx, nextScene, frameCountRef.current, hoveredRoomId);
 
           // 2. Walkmap Debug Overlay (Key M)
           if (showWalkmap) {
@@ -395,7 +418,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
           const visibleAgents = nextAgents
             .filter((ag) => {
               if (nextScene === 'CAMPUS') {
-                // On Campus: show A0, B1, and the 8 B2 Directors
                 return ag.tier !== 'B3';
               }
               if (nextScene === 'ROOM_00') {
@@ -405,7 +427,6 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
                   ag.id === 'b1-ceo-chief-of-staff'
                 );
               }
-              // Inside ROOM_01..ROOM_08: show A0, B1, and the room's B2 Director + B3 Worker
               return (
                 ag.id === 'a0-amadeus' ||
                 ag.id === 'b1-ceo-chief-of-staff' ||
@@ -434,8 +455,8 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             }
           }
 
-          // 5. Draw Agents with Canonical Scale (1/22 on Overworld = 32.7px, 1/12 in Rooms = 60px)
-          const targetCharHeight = nextScene === 'CAMPUS' ? 720 / 22 : 720 / 12;
+          // 5. Draw Agents with Canonical Scale (Overworld = 42px, Rooms = 68px)
+          const targetCharHeight = nextScene === 'CAMPUS' ? 42 : 68;
 
           for (const ag of visibleAgents) {
             const isSelected = ag.id === selectedAgentId;
@@ -443,11 +464,17 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
             // Choose active sprite key based on posture
             let spriteKey = ag.standingSpriteKey;
-            if (ag.id === 'a0-amadeus' && ag.posture === 'UNBLOCK_HULK') {
-              spriteKey = ag.altSpriteKey; // a0_hulk
+            if (ag.id === 'a0-amadeus') {
+              if (ag.posture === 'UNBLOCK_HULK') {
+                spriteKey = 'a0_hulk';
+              } else if (ag.posture === 'SEATED') {
+                spriteKey = 'a0_seated';
+              } else {
+                spriteKey = 'a0_hoody';
+              }
             } else if (ag.id === 'b1-ceo-chief-of-staff' && ag.posture === 'PHONE_DISPATCH') {
               spriteKey = ag.altSpriteKey; // b1_phone
-            } else if (ag.tier === 'B2' && ag.posture === 'SEATED') {
+            } else if (ag.tier === 'B2' && ag.posture === 'SEATED' && nextScene !== 'CAMPUS') {
               spriteKey = ag.altSpriteKey; // b2_*_seated
             }
 
@@ -460,7 +487,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
               ctx.ellipse(
                 ag.x,
                 ag.y - 2,
-                nextScene === 'CAMPUS' ? 14 : 22,
+                nextScene === 'CAMPUS' ? 15 : 22,
                 nextScene === 'CAMPUS' ? 6 : 9,
                 0,
                 0,
@@ -503,9 +530,9 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
             // Speech Bubble if active
             if (ag.speechBubble) {
-              const bubbleY = ag.y - targetCharHeight - 14;
+              const bubbleY = ag.y - targetCharHeight - 10;
               ctx.font = '600 10px "Inter", sans-serif';
-              const bw = Math.min(260, ctx.measureText(ag.speechBubble).width + 16);
+              const bw = Math.min(280, ctx.measureText(ag.speechBubble).width + 16);
               ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
               ctx.strokeStyle = '#00E676';
               ctx.lineWidth = 1.5;
@@ -527,9 +554,34 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
     animId = requestAnimationFrame(renderLoop);
     return () => cancelAnimationFrame(animId);
-  }, [activeScene, showWalkmap, selectedAgentId]);
+  }, [activeScene, showWalkmap, selectedAgentId, hoveredRoomId]);
 
-  // Handle Mouse Click on 1280x720 Canvas (Select Agent OR Pathfind A0 Amadeus)
+  // Handle Mouse Hover on 1280x720 Canvas to highlight Building Doorways & Facade Preview Cards
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (activeScene !== 'CAMPUS') {
+      if (hoveredRoomId) setHoveredRoomId(null);
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (1280 / rect.width);
+    const my = (e.clientY - rect.top) * (720 / rect.height);
+
+    const hitBuilding = CAMPUS_BUILDING_DOORWAYS.find((b) => {
+      const nearDoor = Math.hypot(mx - b.campusDoorX, my - b.campusDoorY) <= 34;
+      const inBounds =
+        mx >= b.buildingBounds.x &&
+        mx <= b.buildingBounds.x + b.buildingBounds.w &&
+        my >= b.buildingBounds.y &&
+        my <= b.buildingBounds.y + b.buildingBounds.h;
+      return nearDoor || inBounds;
+    });
+
+    setHoveredRoomId(hitBuilding ? hitBuilding.roomId : null);
+  };
+
+  // Handle Mouse Click on 1280x720 Canvas (Select Agent, Enter Building, Exit Room, or Pathfind A0)
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -539,7 +591,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
     const clickX = (e.clientX - rect.left) * scaleX;
     const clickY = (e.clientY - rect.top) * scaleY;
 
-    // Check if user clicked on an agent
+    // 1. Check if user clicked on an agent
     const hitRadius = activeScene === 'CAMPUS' ? 24 : 36;
     const clickedAgent = agents.find((ag) => {
       const inScene =
@@ -550,7 +602,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             ag.homeRoom === activeScene ||
             ag.currentLocation === activeScene;
       if (!inScene) return false;
-      return Math.hypot(ag.x - clickX, ag.y - 18 - clickY) <= hitRadius;
+      return Math.hypot(ag.x - clickX, ag.y - 22 - clickY) <= hitRadius;
     });
 
     if (clickedAgent) {
@@ -559,7 +611,31 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
       return;
     }
 
-    // Otherwise move A0 Amadeus via A* Pathfinding
+    // 2. If on Campus, check if user clicked a Building Doorway or Roof to enter its Interior Room
+    if (activeScene === 'CAMPUS') {
+      const clickedBuilding = CAMPUS_BUILDING_DOORWAYS.find((b) => {
+        const nearDoor = Math.hypot(clickX - b.campusDoorX, clickY - b.campusDoorY) <= 32;
+        const inBounds =
+          clickX >= b.buildingBounds.x &&
+          clickX <= b.buildingBounds.x + b.buildingBounds.w &&
+          clickY >= b.buildingBounds.y &&
+          clickY <= b.buildingBounds.y + b.buildingBounds.h;
+        return nearDoor || inBounds;
+      });
+
+      if (clickedBuilding) {
+        handleEnterScene(clickedBuilding.roomId);
+        return;
+      }
+    } else {
+      // 3. If inside a Room (00..08), check if user clicked the Southern Exit Doorway Badge
+      if (clickY >= 648 && clickX >= 510 && clickX <= 770) {
+        handleEnterScene('CAMPUS');
+        return;
+      }
+    }
+
+    // 4. Otherwise move A0 Amadeus via A* Pathfinding
     const a0 = agents.find((a) => a.id === 'a0-amadeus');
     if (a0) {
       fsmRef.current.setA0PathTo(activeScene, a0.x, a0.y, clickX, clickY);
@@ -578,10 +654,10 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
           const lower = file.name.toLowerCase();
           if (lower.includes('campus') || lower.includes('map')) {
             registerCustomSceneBackground('CAMPUS', img);
-            triggerToast(`🗺 Carte Overworld PNG "${file.name}" importée !`);
+            triggerToast(`🗺 Carte Overworld "${file.name}" importée !`);
           } else if (lower.includes('room-00') || lower.includes('city-hall')) {
             registerCustomSceneBackground('ROOM_00', img);
-            triggerToast(`🏛 Salle City Hall PNG "${file.name}" importée !`);
+            triggerToast(`🏛 Salle City Hall "${file.name}" importée !`);
           } else if (lower.includes('hulk')) {
             registerCustomSpritePng('a0_hulk', img, 3, 4);
             triggerToast(`⚡ Sprite 3x4 Hulk "${file.name}" importé avec Auto-ChromaKey !`);
@@ -599,7 +675,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             triggerToast(`🦺 Sprite 3x4 Worker B3 Gilet Jaune "${file.name}" importé !`);
           } else {
             registerCustomSpritePng('a0_hoody', img, 3, 4);
-            triggerToast(`✨ Planche PNG "${file.name}" découpée (3x4 + ChromaKey) !`);
+            triggerToast(`✨ Planche "${file.name}" découpée (3x4 + ChromaKey) !`);
           }
         };
         img.src = String(reader.result);
@@ -622,37 +698,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             <select
               id="village-scene-select"
               value={activeScene}
-              onChange={(e) => {
-                const target = e.target.value as SceneLocationId;
-                setActiveScene(target);
-                fsmRef.current.clearA0Waypoints();
-                if (target !== 'CAMPUS') {
-                  agentFileBridge.updateAgentsInMemory((list) =>
-                    list.map((ag) => {
-                      if (ag.id === 'a0-amadeus') {
-                        return { ...ag, currentLocation: target, x: 640, y: 580, direction: 'UP' };
-                      }
-                      if (ag.id === 'b1-ceo-chief-of-staff') {
-                        return { ...ag, currentLocation: target, x: 590, y: 600, direction: 'UP' };
-                      }
-                      if (ag.tier === 'B2' && ag.homeRoom === target) {
-                        const anchors =
-                          DOMAIN_ROOM_ANCHORS[target as Exclude<SceneLocationId, 'CAMPUS' | 'ROOM_00'>];
-                        return {
-                          ...ag,
-                          currentLocation: target,
-                          x: anchors ? anchors.b2DeskSeat.x : ag.x,
-                          y: anchors ? anchors.b2DeskSeat.y : ag.y,
-                          targetX: anchors ? anchors.b2DeskSeat.x : ag.targetX,
-                          targetY: anchors ? anchors.b2DeskSeat.y : ag.targetY,
-                          posture: 'SEATED',
-                        };
-                      }
-                      return ag;
-                    })
-                  );
-                }
-              }}
+              onChange={(e) => handleEnterScene(e.target.value as SceneLocationId)}
               className="bg-transparent text-xs font-mono text-slate-100 focus:outline-none"
             >
               <option value="CAMPUS" className="bg-slate-900">
@@ -793,6 +839,8 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             width={1280}
             height={720}
             onClick={handleCanvasClick}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseLeave={() => setHoveredRoomId(null)}
             className="w-full h-auto aspect-video block cursor-crosshair select-none"
           />
 

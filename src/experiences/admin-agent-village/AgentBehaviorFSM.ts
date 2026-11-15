@@ -31,6 +31,8 @@ export class AgentBehaviorFSMController {
   private readonly FOLLOW_LAG_FRAMES = 18;
   private activeBeam: ActiveBeamEffect | null = null;
   private lastDoorTransitionAt = 0;
+  private lastB3PatrolFlipAt = 0;
+  private b3PatrolToggle = false;
 
   public setA0PathTo(scene: SceneLocationId, startX: number, startY: number, destX: number, destY: number): void {
     this.a0Waypoints = computeAStarPath(scene, startX, startY, destX, destY);
@@ -58,6 +60,118 @@ export class AgentBehaviorFSMController {
   }
 
   /**
+   * Enters a specific room (ROOM_00..ROOM_08) or returns to CAMPUS, positioning A0, B1, B2 and B3 at calibrated artwork coordinates
+   */
+  public transitionToScene(
+    agents: AgentNode[],
+    targetScene: SceneLocationId,
+    fromRoomId?: SceneLocationId
+  ): AgentNode[] {
+    this.a0Waypoints = [];
+    this.a0History = [];
+    this.lastDoorTransitionAt = Date.now();
+
+    return agents.map((ag) => {
+      if (targetScene === 'CAMPUS') {
+        const exitedDoor = CAMPUS_BUILDING_DOORWAYS.find((b) => b.roomId === fromRoomId);
+        if (ag.id === 'a0-amadeus') {
+          return {
+            ...ag,
+            currentLocation: 'CAMPUS',
+            posture: ag.speedMultiplier > 1.5 ? 'UNBLOCK_HULK' : 'NORMAL_HOODY',
+            x: exitedDoor ? exitedDoor.campusDoorX : 612,
+            y: exitedDoor ? exitedDoor.campusDoorY + 28 : 430,
+            targetX: exitedDoor ? exitedDoor.campusDoorX : 612,
+            targetY: exitedDoor ? exitedDoor.campusDoorY + 28 : 430,
+            direction: 'DOWN',
+          };
+        }
+        if (ag.id === 'b1-ceo-chief-of-staff') {
+          return {
+            ...ag,
+            currentLocation: 'CAMPUS',
+            posture: 'WALK_FOLLOW',
+            x: (exitedDoor ? exitedDoor.campusDoorX : 612) - 36,
+            y: (exitedDoor ? exitedDoor.campusDoorY + 28 : 430) - 12,
+            direction: 'DOWN',
+          };
+        }
+        if (ag.tier === 'B2') {
+          const homeDoor = CAMPUS_BUILDING_DOORWAYS.find((b) => b.roomId === ag.homeRoom);
+          return {
+            ...ag,
+            currentLocation: 'CAMPUS',
+            posture: 'STANDING',
+            x: homeDoor ? homeDoor.b2CampusStandX : ag.x,
+            y: homeDoor ? homeDoor.b2CampusStandY : ag.y,
+            targetX: homeDoor ? homeDoor.b2CampusStandX : ag.targetX,
+            targetY: homeDoor ? homeDoor.b2CampusStandY : ag.targetY,
+            direction: 'DOWN',
+          };
+        }
+        return ag;
+      }
+
+      // Entering an Interior Room (ROOM_00..ROOM_08)
+      if (ag.id === 'a0-amadeus') {
+        return {
+          ...ag,
+          currentLocation: targetScene,
+          posture: ag.speedMultiplier > 1.5 ? 'UNBLOCK_HULK' : 'NORMAL_HOODY',
+          x: 640,
+          y: 605,
+          targetX: 640,
+          targetY: 605,
+          direction: 'UP',
+        };
+      }
+      if (ag.id === 'b1-ceo-chief-of-staff') {
+        return {
+          ...ag,
+          currentLocation: targetScene,
+          posture: 'WALK_FOLLOW',
+          x: 592,
+          y: 620,
+          targetX: 592,
+          targetY: 620,
+          direction: 'UP',
+        };
+      }
+      if (ag.tier === 'B2' && ag.homeRoom === targetScene && targetScene !== 'ROOM_00') {
+        const anchors = DOMAIN_ROOM_ANCHORS[targetScene as Exclude<SceneLocationId, 'CAMPUS' | 'ROOM_00'>];
+        if (anchors) {
+          return {
+            ...ag,
+            currentLocation: targetScene,
+            x: anchors.b2DeskSeat.x,
+            y: anchors.b2DeskSeat.y,
+            targetX: anchors.b2DeskSeat.x,
+            targetY: anchors.b2DeskSeat.y,
+            posture: 'SEATED',
+            direction: anchors.b2DeskSeat.facing,
+          };
+        }
+      }
+      if (ag.tier === 'B3' && ag.homeRoom === targetScene && targetScene !== 'ROOM_00') {
+        const anchors = DOMAIN_ROOM_ANCHORS[targetScene as Exclude<SceneLocationId, 'CAMPUS' | 'ROOM_00'>];
+        if (anchors) {
+          return {
+            ...ag,
+            currentLocation: targetScene,
+            x: anchors.b3Workbench.x,
+            y: anchors.b3Workbench.y,
+            targetX: anchors.b3CenterTablePoint.x,
+            targetY: anchors.b3CenterTablePoint.y,
+            posture: 'EXECUTING_SOP',
+            direction: anchors.b3Workbench.facing,
+          };
+        }
+      }
+      return ag;
+    });
+  }
+
+  /**
    * Advances all agents by 1 tick (60 FPS) and returns updated agents + optional scene transition
    */
   public stepFrame(
@@ -65,7 +179,7 @@ export class AgentBehaviorFSMController {
     activeScene: SceneLocationId,
     keysPressed: Set<string>,
     nowMs: number
-  ): { nextAgents: AgentNode[]; nextScene: SceneLocationId;movingMap: Record<string, boolean> } {
+  ): { nextAgents: AgentNode[]; nextScene: SceneLocationId; movingMap: Record<string, boolean> } {
     let nextScene = activeScene;
     const movingMap: Record<string, boolean> = {};
 
@@ -74,7 +188,7 @@ export class AgentBehaviorFSMController {
       return { nextAgents: agents, nextScene, movingMap };
     }
 
-    const nextAgents = agents.map((a) => ({ ...a }));
+    let nextAgents = agents.map((a) => ({ ...a }));
     const a0 = nextAgents[a0Index];
 
     // 1. Update A0 Amadeus movement (Keyboard ZQSD / WASD / Arrows or A* Waypoints)
@@ -90,6 +204,9 @@ export class AgentBehaviorFSMController {
 
     if (dx !== 0 || dy !== 0) {
       this.a0Waypoints = [];
+      if (a0.posture === 'SEATED') {
+        a0.posture = a0.speedMultiplier > 1.5 ? 'UNBLOCK_HULK' : 'NORMAL_HOODY';
+      }
       const len = Math.hypot(dx, dy);
       const vx = (dx / len) * baseSpeed;
       const vy = (dy / len) * baseSpeed;
@@ -110,6 +227,9 @@ export class AgentBehaviorFSMController {
       a0.direction = this.resolveDirection(vx, vy, a0.direction);
       movingMap[a0.id] = true;
     } else if (this.a0Waypoints.length > 0) {
+      if (a0.posture === 'SEATED') {
+        a0.posture = a0.speedMultiplier > 1.5 ? 'UNBLOCK_HULK' : 'NORMAL_HOODY';
+      }
       const wp = this.a0Waypoints[0];
       const dist = Math.hypot(wp.x - a0.x, wp.y - a0.y);
       if (dist <= baseSpeed + 1.5) {
@@ -152,77 +272,55 @@ export class AgentBehaviorFSMController {
           const d = Math.hypot(a0.x - door.campusDoorX, a0.y - door.campusDoorY);
           if (d < 24) {
             nextScene = door.roomId;
-            this.lastDoorTransitionAt = nowMs;
-            this.a0Waypoints = [];
-            a0.currentLocation = nextScene;
-            a0.x = 640;
-            a0.y = 605;
-            a0.direction = 'UP';
-            this.a0History = [];
-
-            // Bring B1 and the room's B2 Director inside
-            for (const ag of nextAgents) {
-              if (ag.id === 'b1-ceo-chief-of-staff') {
-                ag.currentLocation = nextScene;
-                ag.x = 590;
-                ag.y = 620;
-                ag.direction = 'UP';
-              } else if (ag.tier === 'B2' && ag.homeRoom === nextScene) {
-                ag.currentLocation = nextScene;
-                const anchors = DOMAIN_ROOM_ANCHORS[nextScene as Exclude<SceneLocationId, 'CAMPUS' | 'ROOM_00'>];
-                if (anchors) {
-                  ag.x = anchors.b2DeskSeat.x;
-                  ag.y = anchors.b2DeskSeat.y;
-                  ag.targetX = anchors.b2DeskSeat.x;
-                  ag.targetY = anchors.b2DeskSeat.y;
-                  ag.posture = 'SEATED';
-                  ag.direction = anchors.b2DeskSeat.facing;
-                }
-              }
-            }
+            nextAgents = this.transitionToScene(nextAgents, nextScene);
             break;
           }
         }
       } else {
-        // Inside ROOM_00..ROOM_08 -> check southern double door exit (x: 565..715, y >= 648)
-        if (a0.y >= 646 && a0.x >= 565 && a0.x <= 715) {
-          const exitedDoor = CAMPUS_BUILDING_DOORWAYS.find((b) => b.roomId === activeScene);
+        // Inside ROOM_00..ROOM_08 -> check southern double door exit (x: 560..720, y >= 646)
+        if (a0.y >= 646 && a0.x >= 560 && a0.x <= 720) {
           nextScene = 'CAMPUS';
-          this.lastDoorTransitionAt = nowMs;
-          this.a0Waypoints = [];
-          a0.currentLocation = 'CAMPUS';
-          a0.x = exitedDoor ? exitedDoor.campusDoorX : 640;
-          a0.y = exitedDoor ? exitedDoor.campusDoorY + 30 : 360;
-          a0.direction = 'DOWN';
-          this.a0History = [];
+          nextAgents = this.transitionToScene(nextAgents, 'CAMPUS', activeScene);
+        }
+      }
+    }
 
-          for (const ag of nextAgents) {
-            if (ag.id === 'b1-ceo-chief-of-staff') {
-              ag.currentLocation = 'CAMPUS';
-              ag.x = a0.x - 36;
-              ag.y = a0.y - 14;
-              ag.direction = 'DOWN';
-            }
+    // 3. Periodic B3 Worker SOP Patrol inside Rooms 01..08 (walks between Centerpiece and Workbench)
+    if (
+      nextScene !== 'CAMPUS' &&
+      nextScene !== 'ROOM_00' &&
+      nowMs - this.lastB3PatrolFlipAt > 4800
+    ) {
+      this.lastB3PatrolFlipAt = nowMs;
+      this.b3PatrolToggle = !this.b3PatrolToggle;
+      const anchors = DOMAIN_ROOM_ANCHORS[nextScene as Exclude<SceneLocationId, 'CAMPUS' | 'ROOM_00'>];
+      if (anchors) {
+        for (const ag of nextAgents) {
+          if (ag.tier === 'B3' && ag.homeRoom === nextScene && ag.posture !== 'SUBMITTING_RECEIPT') {
+            const dest = this.b3PatrolToggle ? anchors.b3CenterTablePoint : anchors.b3Workbench;
+            ag.targetX = dest.x;
+            ag.targetY = dest.y;
           }
         }
       }
     }
 
-    // 3. Update B1 Elena Rostova (18-frame delayed follow without overlapping A0)
+    // 4. Update B1 Elena Rostova (18-frame delayed follow without overlapping A0)
     const b1 = nextAgents.find((a) => a.id === 'b1-ceo-chief-of-staff');
-    if (b1) {
-      b1.currentLocation = a0.currentLocation;
+    const a0Updated = nextAgents[a0Index];
+    if (b1 && a0Updated) {
+      b1.currentLocation = a0Updated.currentLocation;
       if (b1.posture !== 'PHONE_DISPATCH') {
         const sampleIndex = Math.max(0, this.a0History.length - this.FOLLOW_LAG_FRAMES);
         const delayedPoint = this.a0History[sampleIndex];
-        const desiredX = delayedPoint ? delayedPoint.x - 34 : a0.x - 38;
-        const desiredY = delayedPoint ? delayedPoint.y - 12 : a0.y - 16;
+        const desiredX = delayedPoint ? delayedPoint.x - 34 : a0Updated.x - 38;
+        const desiredY = delayedPoint ? delayedPoint.y - 12 : a0Updated.y - 16;
 
         const distToDesired = Math.hypot(desiredX - b1.x, desiredY - b1.y);
-        const distToA0 = Math.hypot(a0.x - b1.x, a0.y - b1.y);
+        const distToA0 = Math.hypot(a0Updated.x - b1.x, a0Updated.y - b1.y);
 
         if (distToDesired > 6 && distToA0 > 34) {
-          const step = Math.min(3.1 * a0.speedMultiplier, distToDesired);
+          const step = Math.min(3.1 * a0Updated.speedMultiplier, distToDesired);
           const vx = ((desiredX - b1.x) / distToDesired) * step;
           const vy = ((desiredY - b1.y) / distToDesired) * step;
           b1.x += vx;
@@ -237,7 +335,7 @@ export class AgentBehaviorFSMController {
       }
     }
 
-    // 4. Update B2 Directors and B3 Workers moving toward their targetX / targetY anchors
+    // 5. Update B2 Directors and B3 Workers moving toward their targetX / targetY anchors
     for (const ag of nextAgents) {
       if (ag.id === 'a0-amadeus' || ag.id === 'b1-ceo-chief-of-staff') continue;
 
@@ -250,10 +348,37 @@ export class AgentBehaviorFSMController {
         ag.y += vy;
         ag.direction = this.resolveDirection(vx, vy, ag.direction);
         movingMap[ag.id] = true;
+        // While walking to chair, show STANDING walk cycle; switch to SEATED at < 8px!
+        if (ag.tier === 'B2' && dist > 8 && nextScene !== 'CAMPUS') {
+          ag.posture = 'STANDING';
+        }
       } else {
         ag.x = ag.targetX;
         ag.y = ag.targetY;
         movingMap[ag.id] = false;
+        if (ag.tier === 'B2' && nextScene !== 'CAMPUS') {
+          ag.posture = 'SEATED';
+          // Restore chair facing orientation
+          if (nextScene === 'ROOM_00') {
+            const seat = findCityHallSeatForAgent(ag.id);
+            ag.direction = seat.facing;
+          } else {
+            const anchors = DOMAIN_ROOM_ANCHORS[nextScene as Exclude<SceneLocationId, 'CAMPUS' | 'ROOM_00'>];
+            if (anchors) ag.direction = anchors.b2DeskSeat.facing;
+          }
+        }
+      }
+
+      // Check proximity note-sharing ("Sync NOTES.md" when worker and director or A0 pass near each other)
+      if (
+        ag.tier === 'B3' &&
+        ag.currentLocation === nextScene &&
+        !ag.speechBubble &&
+        a0Updated &&
+        Math.hypot(ag.x - a0Updated.x, ag.y - a0Updated.y) < 54
+      ) {
+        ag.speechBubble = '📝 Sync NOTES.md & RECEIPTS.json';
+        ag.speechBubbleUntil = nowMs + 2600;
       }
 
       // Clear expired speech bubbles
@@ -263,9 +388,9 @@ export class AgentBehaviorFSMController {
       }
     }
 
-    if (a0.speechBubbleUntil && nowMs > a0.speechBubbleUntil) {
-      a0.speechBubble = undefined;
-      a0.speechBubbleUntil = undefined;
+    if (a0Updated && a0Updated.speechBubbleUntil && nowMs > a0Updated.speechBubbleUntil) {
+      a0Updated.speechBubble = undefined;
+      a0Updated.speechBubbleUntil = undefined;
     }
     if (b1 && b1.speechBubbleUntil && nowMs > b1.speechBubbleUntil) {
       b1.speechBubble = undefined;
@@ -276,8 +401,8 @@ export class AgentBehaviorFSMController {
   }
 
   /**
-   * Call Town Hall (Key C): Teleports/Converges A0, B1, and the 8 B2 Directors into Room 00
-   * around the central miniature village table in SEATED posture.
+   * Call Town Hall (Key C): Converges A0, B1, and the 8 B2 Directors into Room 00
+   * around the central miniature village table. Each director walks to their chair and sits down (< 8px).
    */
   public assembleTownHallCouncil(agents: AgentNode[], nowMs: number): AgentNode[] {
     this.a0Waypoints = [];
@@ -285,7 +410,7 @@ export class AgentBehaviorFSMController {
     return agents.map((ag) => {
       if (ag.tier === 'B3') return ag;
       const seat = findCityHallSeatForAgent(ag.id);
-      const startOffset = ag.tier === 'B2' ? 95 : 20;
+      const startOffset = ag.tier === 'B2' ? 75 : 0;
       return {
         ...ag,
         currentLocation: 'ROOM_00',
@@ -294,13 +419,13 @@ export class AgentBehaviorFSMController {
         targetX: seat.x,
         targetY: seat.y,
         direction: seat.facing,
-        posture: ag.tier === 'B2' ? 'SEATED' : ag.posture,
+        posture: ag.id === 'a0-amadeus' || ag.tier === 'B2' ? 'SEATED' : ag.posture,
         speechBubble:
           ag.id === 'a0-amadeus'
             ? '🏛 Conseil 12WY ouvert !'
             : ag.id === 'b1-ceo-chief-of-staff'
             ? '📊 Audit Workgraph des 8 Domaines'
-            : `Assis Fauteuil #${seat.seatIndex}`,
+            : `Fauteuil #${seat.seatIndex}`,
         speechBubbleUntil: nowMs + 5500,
       };
     });

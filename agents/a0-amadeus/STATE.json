@@ -1,0 +1,10 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "overworld",
+  "targetCoords": {
+    "x": 640,
+    "y": 410
+  },
+  "bubbleText": "Gouvernance Souveraine A0 : 5 Human Gates actifs & Mode Hulk prêt.",
+  "spriteSheet": "/assets/sprites/a0/amadeus-hoody-walk-3x4.webp"
+}

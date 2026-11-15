@@ -1,0 +1,18 @@
+{
+  "posture": "STANDING",
+  "currentRoom": "overworld",
+  "homeRoom": "room-05-finance",
+  "deskCoords": {
+    "x": 345,
+    "y": 248
+  },
+  "targetCoords": {
+    "x": 274,
+    "y": 462
+  },
+  "bubbleText": "Contrôle Unit Economics : >= $45/h net chauffeur garanti.",
+  "spriteSheet": "/assets/sprites/b2-standing/b2-05-finance-3x4.webp",
+  "seatedSprite": "/assets/sprites/b2-seated/b2-05-finance-seated.webp",
+  "worker": "b3-fin-ledger",
+  "domain": "Finance & Unit Economics"
+}
