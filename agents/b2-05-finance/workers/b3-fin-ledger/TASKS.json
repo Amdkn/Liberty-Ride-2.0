@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-FIN-501",
+    "title": "Vérifier les calculs du simulateur de gains chauffeurs Erlanger-CVG",
+    "domain": "FINANCE",
+    "ownerB2": "b2-05-finance",
+    "workerB3": "b3-fin-ledger",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Écart nul sur les marges nettes.",
+    "createdAt": "2026-11-15T08:15:00.000Z",
+    "updatedAt": "2026-11-15T08:27:00.000Z"
+  }
+]

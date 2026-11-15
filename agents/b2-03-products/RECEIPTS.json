@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-PRD-301",
+    "taskId": "TASK-PRD-301",
+    "agentId": "b3-product-builder",
+    "verifiedBy": "b2-03-products",
+    "timestamp": "2026-11-15T08:30:00.000Z",
+    "summary": "Triple World UI, SpriteSheetSlicer 3x4 et Driver House 3D Twin validés.",
+    "metrics": { "roomsRendered": 9, "slicerModes3D": 5, "fpsTarget": 60 },
+    "hash": "sha256:prd03liam3dtwinvillage"
+  }
+]

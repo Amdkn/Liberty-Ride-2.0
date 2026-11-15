@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-IT-701",
+    "taskId": "TASK-IT-701",
+    "agentId": "b3-it-sre",
+    "verifiedBy": "b2-07-it",
+    "timestamp": "2026-11-15T08:29:00.000Z",
+    "summary": "SOP-IT-01 exécutée : 18 bureaux d'agents synchronisés.",
+    "metrics": { "foldersSynced": 18 },
+    "hash": "sha256:b3itsre701"
+  }
+]

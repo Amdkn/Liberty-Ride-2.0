@@ -1,0 +1,16 @@
+[
+  {
+    "id": "RCPT-GRW-201",
+    "taskId": "TASK-GRW-201",
+    "agentId": "b3-growth-media",
+    "verifiedBy": "b2-02-growth",
+    "timestamp": "2026-11-15T08:24:00.000Z",
+    "summary": "Indexation SEO locale Erlanger/CVG validée avec coût d'acquisition organique $0.",
+    "metrics": {
+      "localSeoScore": 97,
+      "conversionRatePercent": 14.8,
+      "paidAdsSpendUsd": 0
+    },
+    "hash": "sha256:grw02clara97seocvg"
+  }
+]

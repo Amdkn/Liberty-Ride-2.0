@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-PPL-801",
+    "title": "Certifier la promotion inaugurale des chauffeurs SUV Erlanger & les 8 Workers B3",
+    "domain": "PEOPLE",
+    "ownerB2": "b2-08-people",
+    "workerB3": "b3-people-onboarding",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "100% des chauffeurs et techniciens B3 certifiés aux standards E-Myth LD01.",
+    "createdAt": "2026-11-15T08:15:00.000Z",
+    "updatedAt": "2026-11-15T08:30:00.000Z"
+  }
+]

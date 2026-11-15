@@ -1,0 +1,16 @@
+[
+  {
+    "id": "TASK-LGL-601",
+    "title": "Préparer le dossier annuel de conformité KYTC & Permis Opérateur CVG Airport",
+    "domain": "LEGAL",
+    "ownerB2": "b2-06-legal",
+    "workerB3": "b3-legal-compliance",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": true,
+    "humanGateId": "GATE_KYTC_FILING",
+    "acceptanceCriteria": "Certificats d'assurance commerciale $1M CSL et permis CVG vérifiés pour les 3 SUV.",
+    "createdAt": "2026-11-15T08:16:00.000Z",
+    "updatedAt": "2026-11-15T08:28:00.000Z"
+  }
+]

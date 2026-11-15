@@ -1,0 +1,16 @@
+[
+  {
+    "id": "RCPT-FIN-501",
+    "taskId": "TASK-FIN-501",
+    "agentId": "b3-fin-ledger",
+    "verifiedBy": "b2-05-finance",
+    "timestamp": "2026-11-15T08:27:00.000Z",
+    "summary": "Audit FinOps confirmé : $48.60/h net chauffeur et $0.00 de coût API externe caché.",
+    "metrics": {
+      "netDriverHourlyUsd": 48.6,
+      "targetHourlyUsd": 45.0,
+      "externalApiBurnUsd": 0
+    },
+    "hash": "sha256:fin05arthur4860hourly"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-SLS-401",
+    "taskId": "TASK-SLS-401",
+    "agentId": "b3-sales-crm",
+    "verifiedBy": "b2-04-sales",
+    "timestamp": "2026-11-15T08:26:00.000Z",
+    "summary": "Pipeline B2B CVG qualifié : 12 hôtels et 5 sièges sociaux prêts pour signature A0.",
+    "metrics": { "b2bAccountsQualified": 17, "weeklyGuaranteedRides": 30 },
+    "hash": "sha256:sls04sofia100moffers"
+  }
+]

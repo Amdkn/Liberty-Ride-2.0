@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-PPL-801",
+    "taskId": "TASK-PPL-801",
+    "agentId": "b3-people-onboarding",
+    "verifiedBy": "b2-08-people",
+    "timestamp": "2026-11-15T08:30:00.000Z",
+    "summary": "SOP-PPL-01 exécutée : Chauffeurs et agents B3 certifiés.",
+    "metrics": { "certifiedCount": 14 },
+    "hash": "sha256:b3peopleonboarding801"
+  }
+]

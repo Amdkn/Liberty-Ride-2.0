@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-IT-701",
+    "title": "Tester la lecture/écriture disque des 18 dossiers d'agents via /api/agents",
+    "domain": "IT",
+    "ownerB2": "b2-07-it",
+    "workerB3": "b3-it-sre",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "18/18 dossiers lus et écrits sans erreur.",
+    "createdAt": "2026-11-15T08:12:00.000Z",
+    "updatedAt": "2026-11-15T08:29:00.000Z"
+  }
+]

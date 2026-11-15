@@ -1,0 +1,28 @@
+[
+  {
+    "id": "TASK-OPS-101",
+    "title": "Calibrer la grille de pré-positionnement matinal SUV #1-#3 sur Erlanger -> CVG",
+    "domain": "OPERATIONS",
+    "ownerB2": "b2-01-operations",
+    "workerB3": "b3-ops-dispatch",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Temps d'approche moyen < 8 minutes et SLA ponctualité >= 99.2%.",
+    "createdAt": "2026-11-15T08:10:00.000Z",
+    "updatedAt": "2026-11-15T08:22:00.000Z"
+  },
+  {
+    "id": "TASK-OPS-102",
+    "title": "Déblocage Protocole Déroutement Brouillard Dense Pont Brent Spence (I-71/I-75)",
+    "domain": "OPERATIONS",
+    "ownerB2": "b2-01-operations",
+    "workerB3": "b3-ops-dispatch",
+    "status": "BLOCKED_2X",
+    "rejectionCount": 2,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Itinéraire de contournement I-275 validé avec surcoût temps < 6 min (Nécessite Mode Hulk A0).",
+    "createdAt": "2026-11-15T08:25:00.000Z",
+    "updatedAt": "2026-11-15T08:40:00.000Z"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-GRW-201",
+    "taskId": "TASK-GRW-201",
+    "agentId": "b3-growth-media",
+    "verifiedBy": "b2-02-growth",
+    "timestamp": "2026-11-15T08:24:00.000Z",
+    "summary": "SOP-GRW-01 complétée : SEO Local Erlanger/CVG actif.",
+    "metrics": { "schemaValid": 1, "localPagesPublished": 6 },
+    "hash": "sha256:b3growth201receipt"
+  }
+]

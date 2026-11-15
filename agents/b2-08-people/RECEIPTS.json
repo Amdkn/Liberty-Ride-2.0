@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-PPL-801",
+    "taskId": "TASK-PPL-801",
+    "agentId": "b3-people-onboarding",
+    "verifiedBy": "b2-08-people",
+    "timestamp": "2026-11-15T08:30:00.000Z",
+    "summary": "Certification Driver Business Academy & Audit Permis KY/OH validés.",
+    "metrics": { "driversCertified": 6, "b3WorkersCertified": 8, "avgRating": 4.98 },
+    "hash": "sha256:ppl08mayalinacademy"
+  }
+]

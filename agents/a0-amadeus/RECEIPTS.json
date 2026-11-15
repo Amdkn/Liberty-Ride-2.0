@@ -1,0 +1,16 @@
+[
+  {
+    "id": "RCPT-A0-001",
+    "taskId": "TASK-A0-001",
+    "agentId": "a0-amadeus",
+    "verifiedBy": "a0-amadeus",
+    "timestamp": "2026-11-15T08:30:00.000Z",
+    "summary": "Constitution d'A'Space OS (LD01) et des 5 Human Gates signée par A0 Amadeus.",
+    "metrics": {
+      "humanGatesLocked": 5,
+      "domainsActive": 8,
+      "driverTargetHourlyUsd": 45
+    },
+    "hash": "sha256:a0f98e12b74c9031d4e881a0amadeus01"
+  }
+]

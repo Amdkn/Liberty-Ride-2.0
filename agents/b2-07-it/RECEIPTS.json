@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-IT-701",
+    "taskId": "TASK-IT-701",
+    "agentId": "b3-it-sre",
+    "verifiedBy": "b2-07-it",
+    "timestamp": "2026-11-15T08:29:00.000Z",
+    "summary": "Pont disque /api/agents, schémas SQL Supabase et configurations n8n/Vapi opérationnels.",
+    "metrics": { "apiLatencyMs": 4, "rlsPoliciesActive": 8 },
+    "hash": "sha256:it07viktorsre701"
+  }
+]

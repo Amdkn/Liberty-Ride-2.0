@@ -1,0 +1,16 @@
+[
+  {
+    "id": "RCPT-OPS-101",
+    "taskId": "TASK-OPS-101",
+    "agentId": "b3-ops-dispatch",
+    "verifiedBy": "b2-01-operations",
+    "timestamp": "2026-11-15T08:22:00.000Z",
+    "summary": "Grille de dispatch matinale Erlanger <-> CVG validée sur les 3 baies SUV.",
+    "metrics": {
+      "avgPickupEtaMinutes": 6.8,
+      "onTimeSlaPercent": 99.4,
+      "activeSuvUnits": 3
+    },
+    "hash": "sha256:ops01marcus994cvgdispatch"
+  }
+]

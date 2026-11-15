@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-PPL-801",
+    "title": "Vérifier les licences chauffeurs KY/OH et délivrer les badges Academy",
+    "domain": "PEOPLE",
+    "ownerB2": "b2-08-people",
+    "workerB3": "b3-people-onboarding",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Tous les dossiers complets.",
+    "createdAt": "2026-11-15T08:15:00.000Z",
+    "updatedAt": "2026-11-15T08:30:00.000Z"
+  }
+]

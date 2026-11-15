@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-B1-001",
+    "title": "Orchestrer la synchronisation temps réel des 8 Pavillons B2 vers le City Hall",
+    "domain": "EXECUTIVE",
+    "ownerB2": "b1-ceo-chief-of-staff",
+    "workerB3": "b3-ops-dispatch",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Tous les fichiers TASKS.json et RECEIPTS.json des 8 domaines remontent sans latence dans /api/agents.",
+    "createdAt": "2026-11-15T08:05:00.000Z",
+    "updatedAt": "2026-11-15T08:28:00.000Z"
+  }
+]

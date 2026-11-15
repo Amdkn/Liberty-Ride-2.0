@@ -1,0 +1,29 @@
+[
+  {
+    "id": "TASK-A0-001",
+    "title": "Présider le Conseil 12WY au City Hall (Room 00) & Auditer les 8 Directeurs B2",
+    "domain": "EXECUTIVE",
+    "ownerB2": "b1-ceo-chief-of-staff",
+    "workerB3": "b3-ops-dispatch",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Les 8 Directeurs B2 rejoignent leurs fauteuils autour de la table-maquette et présentent leurs reçus RECEIPTS.json.",
+    "createdAt": "2026-11-15T08:00:00.000Z",
+    "updatedAt": "2026-11-15T08:30:00.000Z"
+  },
+  {
+    "id": "TASK-A0-002",
+    "title": "Valider le Human Gate GATE_CVG_PRICING : Tarif Garanti Erlanger -> CVG ($48 SUV)",
+    "domain": "FINANCE",
+    "ownerB2": "b2-05-finance",
+    "workerB3": "b3-fin-ledger",
+    "status": "IN_PROGRESS",
+    "rejectionCount": 0,
+    "requiresHumanGate": true,
+    "humanGateId": "GATE_CVG_PRICING",
+    "acceptanceCriteria": "Marge nette chauffeur >= $45/h vérifiée sur simulateur FinOps.",
+    "createdAt": "2026-11-15T08:35:00.000Z",
+    "updatedAt": "2026-11-15T08:35:00.000Z"
+  }
+]

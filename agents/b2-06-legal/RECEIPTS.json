@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-LGL-601",
+    "taskId": "TASK-LGL-601",
+    "agentId": "b3-legal-compliance",
+    "verifiedBy": "b2-06-legal",
+    "timestamp": "2026-11-15T08:28:00.000Z",
+    "summary": "Audit KYTC & CVG Ground Transportation validé à 100 % sur la flotte SUV.",
+    "metrics": { "kytcCompliancePercent": 100, "cvgPermitsActive": 3 },
+    "hash": "sha256:lgl06nadiakytccvg"
+  }
+]

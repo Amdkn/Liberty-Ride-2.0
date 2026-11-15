@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-FIN-501",
+    "title": "Certifier la matrice de rentabilité chauffeur >= $45/h sur le corridor Erlanger-CVG",
+    "domain": "FINANCE",
+    "ownerB2": "b2-05-finance",
+    "workerB3": "b3-fin-ledger",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Revenu net horaire chauffeur >= $45.00/h vérifié dans DriverEarningsSimulator.",
+    "createdAt": "2026-11-15T08:15:00.000Z",
+    "updatedAt": "2026-11-15T08:27:00.000Z"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "RCPT-B1-001",
+    "taskId": "TASK-B1-001",
+    "agentId": "b1-ceo-chief-of-staff",
+    "verifiedBy": "a0-amadeus",
+    "timestamp": "2026-11-15T08:28:00.000Z",
+    "summary": "Workgraph Anti-Orphan-Work actif sur les 8 domaines B2 et 8 techniciens B3.",
+    "metrics": {
+      "orphanTasksBlocked": 0,
+      "followLagFrames": 18,
+      "townHallSeatsConfigured": 15
+    },
+    "hash": "sha256:b1elena88192a4c7d6e10b981ceo"
+  }
+]

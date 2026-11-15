@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-SLS-401",
+    "title": "Préparer les dossiers CRM des 17 comptes B2B Hôtels CVG",
+    "domain": "SALES",
+    "ownerB2": "b2-04-sales",
+    "workerB3": "b3-sales-crm",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Fiches décideurs et grilles de volume validées.",
+    "createdAt": "2026-11-15T08:14:00.000Z",
+    "updatedAt": "2026-11-15T08:26:00.000Z"
+  }
+]

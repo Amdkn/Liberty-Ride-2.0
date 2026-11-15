@@ -1,0 +1,15 @@
+[
+  {
+    "id": "RCPT-OPS-101",
+    "taskId": "TASK-OPS-101",
+    "agentId": "b3-ops-dispatch",
+    "verifiedBy": "b2-01-operations",
+    "timestamp": "2026-11-15T08:22:00.000Z",
+    "summary": "SOP-OPS-01 exécutée : 3 SUV opérationnels et assignés sur le corridor CVG.",
+    "metrics": {
+      "suvReadyCount": 3,
+      "deadheadRatioPercent": 14.5
+    },
+    "hash": "sha256:b3opsdispatch101receipt"
+  }
+]

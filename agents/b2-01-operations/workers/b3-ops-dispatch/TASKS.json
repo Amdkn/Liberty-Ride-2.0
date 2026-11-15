@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-OPS-101",
+    "title": "Exécuter la SOP d'assignation matinale des 3 SUV sur Erlanger -> CVG",
+    "domain": "OPERATIONS",
+    "ownerB2": "b2-01-operations",
+    "workerB3": "b3-ops-dispatch",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Reçu d'assignation signé avec ETA < 8 min.",
+    "createdAt": "2026-11-15T08:10:00.000Z",
+    "updatedAt": "2026-11-15T08:22:00.000Z"
+  }
+]

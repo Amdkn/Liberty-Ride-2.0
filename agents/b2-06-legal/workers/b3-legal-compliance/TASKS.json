@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-LGL-601",
+    "title": "Auditer les certificats KYTC et badges AVI CVG des 3 SUV",
+    "domain": "LEGAL",
+    "ownerB2": "b2-06-legal",
+    "workerB3": "b3-legal-compliance",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "3/3 SUV conformes.",
+    "createdAt": "2026-11-15T08:16:00.000Z",
+    "updatedAt": "2026-11-15T08:28:00.000Z"
+  }
+]

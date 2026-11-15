@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-PRD-301",
+    "title": "Compiler les shaders/matériaux R3F du Driver House 3D Twin et le Canvas 2D Village",
+    "domain": "PRODUCTS",
+    "ownerB2": "b2-03-products",
+    "workerB3": "b3-product-builder",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Rendu fluide 60 FPS.",
+    "createdAt": "2026-11-15T08:10:00.000Z",
+    "updatedAt": "2026-11-15T08:30:00.000Z"
+  }
+]

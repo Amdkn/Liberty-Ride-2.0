@@ -1,0 +1,16 @@
+[
+  {
+    "id": "TASK-SLS-401",
+    "title": "Structurer le contrat B2B Navettes VIP Hôtels CVG & Sièges Sociaux Cincinnati",
+    "domain": "SALES",
+    "ownerB2": "b2-04-sales",
+    "workerB3": "b3-sales-crm",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": true,
+    "humanGateId": "GATE_B2B_CONTRACTS",
+    "acceptanceCriteria": "Volume minimum garanti de 25 transferts SUV/semaine à $58 moyen.",
+    "createdAt": "2026-11-15T08:14:00.000Z",
+    "updatedAt": "2026-11-15T08:26:00.000Z"
+  }
+]

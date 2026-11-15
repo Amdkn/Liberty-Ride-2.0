@@ -1,0 +1,56 @@
+{
+  "name": "Liberty Ride 2.0 — Booking, CVG Flight Dispatch & 90s Service Recovery",
+  "nodes": [
+    {
+      "id": "webhook-booking-trigger",
+      "name": "Webhook: Customer World / Vapi Booking",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "liberty-ride-booking-dispatch",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "anti-orphan-check",
+      "name": "B1 CEO: Anti-Orphan-Work & Unit Economics Check (>= $45/h)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300],
+      "parameters": {
+        "functionCode": "const fare = items[0].json.fareUsd || 48;\nconst netDriver = +(fare * 0.78).toFixed(2);\nitems[0].json.ownerB2 = 'b2-01-operations';\nitems[0].json.workerB3 = 'b3-ops-dispatch';\nitems[0].json.netDriverUsd = netDriver;\nitems[0].json.meetsHourlyTarget = netDriver >= 36;\nreturn items;"
+      }
+    },
+    {
+      "id": "dispatch-b3-worker",
+      "name": "B3 Ops Dispatch: Assign Erlanger SUV Bay #1-#3 & Emit Receipt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [760, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5173/api/agents/task",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "agentId", "value": "b2-01-operations" }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Customer World / Vapi Booking": {
+      "main": [[{ "node": "B1 CEO: Anti-Orphan-Work & Unit Economics Check (>= $45/h)", "type": "main", "index": 0 }]]
+    },
+    "B1 CEO: Anti-Orphan-Work & Unit Economics Check (>= $45/h)": {
+      "main": [[{ "node": "B3 Ops Dispatch: Assign Erlanger SUV Bay #1-#3 & Emit Receipt", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "idempotency": true
+  }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "RCPT-FIN-501",
+    "taskId": "TASK-FIN-501",
+    "agentId": "b3-fin-ledger",
+    "verifiedBy": "b2-05-finance",
+    "timestamp": "2026-11-15T08:27:00.000Z",
+    "summary": "SOP-FIN-01 exécutée : Grand livre et simulateur $45+/h équilibrés.",
+    "metrics": { "netHourlyVerified": 48.6 },
+    "hash": "sha256:b3finledger501"
+  }
+]

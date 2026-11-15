@@ -1,0 +1,15 @@
+[
+  {
+    "id": "TASK-GRW-201",
+    "title": "Publier les schémas JSON-LD LocalBusiness Erlanger & CVG",
+    "domain": "GROWTH",
+    "ownerB2": "b2-02-growth",
+    "workerB3": "b3-growth-media",
+    "status": "COMPLETED",
+    "rejectionCount": 0,
+    "requiresHumanGate": false,
+    "acceptanceCriteria": "Validation Schema.org 100%.",
+    "createdAt": "2026-11-15T08:12:00.000Z",
+    "updatedAt": "2026-11-15T08:24:00.000Z"
+  }
+]
