@@ -43,7 +43,11 @@ import {
   CAMPUS_BUILDING_DOORWAYS,
   DOMAIN_ROOM_ANCHORS,
 } from './SeatedAnchorsRegistry';
-import { renderWalkmapDebugOverlay } from './WalkmapCollision';
+import {
+  getSpatialRedZones,
+  pointInPolygon,
+  renderWalkmapDebugOverlay,
+} from './WalkmapCollision';
 import {
   drawAgentSpriteFrame,
   registerCustomSpritePng,
@@ -105,6 +109,7 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
   const [activeScene, setActiveScene] = useState<SceneLocationId>('CAMPUS');
   const [hoveredRoomId, setHoveredRoomId] = useState<SceneLocationId | null>(null);
+  const [hoveredZoneId, setHoveredZoneId] = useState<string | null>(null);
   const [showWalkmap, setShowWalkmap] = useState<boolean>(false);
   const [isHulkMode, setIsHulkMode] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
@@ -506,15 +511,26 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
             const isSelected = ag.id === selectedAgentId && (agentQuickCardOpen || inspectorOpen);
             const hasBlockedTask = ag.tasks.some((t) => t.status === 'BLOCKED_2X');
 
+            // Deterministic character-state-to-sprite mapping
             let spriteKey = ag.standingSpriteKey;
             if (ag.id === 'a0-amadeus') {
-              if (ag.posture === 'UNBLOCK_HULK') spriteKey = 'a0_hulk';
-              else if (ag.posture === 'SEATED') spriteKey = 'a0_seated';
-              else spriteKey = 'a0_hoody';
-            } else if (ag.id === 'b1-ceo-chief-of-staff' && ag.posture === 'PHONE_DISPATCH') {
-              spriteKey = ag.altSpriteKey;
+              if (ag.posture === 'UNBLOCK_HULK') {
+                spriteKey = 'a0_hulk';
+              } else if (ag.posture === 'SEATED') {
+                spriteKey = 'a0_seated';
+              } else {
+                spriteKey = 'a0_hoody';
+              }
+            } else if (ag.id === 'b1-ceo-chief-of-staff') {
+              if (ag.posture === 'PHONE_DISPATCH') {
+                spriteKey = 'b1_phone';
+              } else if (ag.posture === 'SEATED') {
+                spriteKey = 'b1_seated';
+              } else {
+                spriteKey = 'b1_walk';
+              }
             } else if (ag.tier === 'B2' && ag.posture === 'SEATED' && nextScene !== 'CAMPUS') {
-              spriteKey = ag.altSpriteKey;
+              spriteKey = ag.altSpriteKey; // b2_*_seated
             }
 
             ctx.save();
@@ -591,17 +607,35 @@ export const AdminVillageView: React.FC<AdminVillageViewProps> = ({
 
     animId = requestAnimationFrame(renderLoop);
     return () => cancelAnimationFrame(animId);
-  }, [activeScene, showWalkmap, selectedAgentId, hoveredRoomId, agentQuickCardOpen, inspectorOpen]);
+  }, [
+    activeScene,
+    showWalkmap,
+    selectedAgentId,
+    hoveredRoomId,
+    hoveredZoneId,
+    agentQuickCardOpen,
+    inspectorOpen,
+  ]);
 
-  // Hover on Canvas -> Building Doorways & Facade Preview Cards
+  // Hover on Canvas -> Building Doorways, Facade Preview Cards & Spatial Red Zones
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x: mx, y: my } = clientToCanvasCoords(canvas, e.clientX, e.clientY);
+
+    if (showWalkmap) {
+      const hitZone = getSpatialRedZones(activeScene).find((z) =>
+        pointInPolygon(mx, my, z.polygon)
+      );
+      setHoveredZoneId(hitZone ? hitZone.id : null);
+    } else if (hoveredZoneId) {
+      setHoveredZoneId(null);
+    }
+
     if (activeScene !== 'CAMPUS') {
       if (hoveredRoomId) setHoveredRoomId(null);
       return;
     }
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const { x: mx, y: my } = clientToCanvasCoords(canvas, e.clientX, e.clientY);
 
     const hitBuilding = CAMPUS_BUILDING_DOORWAYS.find((b) => {
       const nearDoor = Math.hypot(mx - b.campusDoorX, my - b.campusDoorY) <= 34;

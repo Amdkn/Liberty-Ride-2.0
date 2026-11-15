@@ -141,13 +141,12 @@ export function ensureDriveSpritesPreloaded(): void {
   if (spritesPreloadStarted || typeof window === 'undefined') return;
   spritesPreloadStarted = true;
 
-  // 1. Pre-cut 3x4 walking & action sheets (Caracteres Serie 2 for B2 Directors)
+  // 1. Pre-cut 3x4 walking & action sheets (Explicit deterministic mapping)
   const walk3x4Sources: Array<{ key: string; url: string }> = [
     { key: 'a0_hoody', url: '/assets/sprites/a0/amadeus-hoody-walk-3x4.webp' },
-    { key: 'a0_ceo_suit', url: '/assets/sprites/a0/amadeus-ceo-suit-3x4.webp' },
     { key: 'a0_hulk', url: '/assets/sprites/a0/amadeus-hulk-unblock-3x4.webp' },
-    { key: 'b1_walk', url: '/assets/sprites/b1/ceo-women-walk-3x4.webp' },
-    { key: 'b1_phone', url: '/assets/sprites/b1/ceo-women-phone-dispatch.webp' },
+    { key: 'b1_walk', url: '/assets/sprites/b1/b1-ceo-walk-3x4.webp' },
+    { key: 'b1_phone', url: '/assets/sprites/b1/b1-ceo-phone-dispatch.webp' },
     { key: 'b2_operations_standing', url: '/assets/sprites/b2-standing/b2-01-operations-3x4.webp' },
     { key: 'b2_growth_standing', url: '/assets/sprites/b2-standing/b2-02-growth-3x4.webp' },
     { key: 'b2_products_standing', url: '/assets/sprites/b2-standing/b2-03-products-3x4.webp' },
@@ -169,9 +168,10 @@ export function ensureDriveSpritesPreloaded(): void {
     img.src = url;
   });
 
-  // 2. Pre-cut 1x1 normalized Seated Poses (Front & Profile Side for B2 Directors + A0 Seated)
+  // 2. Pre-cut 1x1 normalized Seated Poses (A0 Seated, B1 CEO Seated, and B2 Directors Front & Profile)
   const singleSeatedSources: Array<{ key: string; url: string }> = [
-    { key: 'a0_seated', url: '/assets/sprites/a0/amadeus-ceo-seated-front.webp' },
+    { key: 'a0_seated', url: '/assets/sprites/a0/amadeus-hoody-seated-front.webp' },
+    { key: 'b1_seated', url: '/assets/sprites/b1/b1-ceo-seated-front.webp' },
     { key: 'b2_operations_seated', url: '/assets/sprites/b2-seated/b2-01-operations-seated.webp' },
     { key: 'b2_operations_seated_side', url: '/assets/sprites/b2-seated/b2-01-operations-seated-side.webp' },
     { key: 'b2_growth_seated', url: '/assets/sprites/b2-seated/b2-02-growth-seated.webp' },
